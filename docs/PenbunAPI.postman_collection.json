@@ -1,0 +1,276 @@
+{
+  "info": {
+    "name": "PenbunAPI v3.2.0",
+    "description": "RESTful API for managing distribution and supply of books and stationery\n\n## Environment Variables\n- `base_url`: http://localhost:8089\n- `token`: (auto-set from Login request)\n\n## Usage\n1. Call \"Login\" to authenticate → token auto-saved\n2. All protected endpoints inherit the token via header\n3. Test each module's 8 CRUD functions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "opencode"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"your_password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "public", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "public", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/select/id/C001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "select", "id", "C001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"customer_name\": \"Test Customer\",\n  \"address\": \"123 Main St\",\n  \"phone1\": \"555-1234\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/customer/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"customer_name\": \"Updated Customer\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/customer/update/C001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "update", "C001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/delete/C001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "delete", "C001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer/remove/C001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer", "remove", "C001"]}}}
+      ]
+    },
+    {
+      "name": "Customer Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/select/id/CT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "select", "id", "CT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Standard\",\n  \"base_credit_day\": 30,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Premium\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/update/CT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "update", "CT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/delete/CT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "delete", "CT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/customer-type/remove/CT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "customer-type", "remove", "CT001"]}}}
+      ]
+    },
+    {
+      "name": "Vendor",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/select/id/V001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "select", "id", "V001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"vendor_name\": \"Test Vendor\",\n  \"address\": \"456 Supplier Ave\",\n  \"phone1\": \"555-5678\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/vendor/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"vendor_name\": \"Updated Vendor\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/vendor/update/V001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "update", "V001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/delete/V001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "delete", "V001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor/remove/V001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor", "remove", "V001"]}}}
+      ]
+    },
+    {
+      "name": "Vendor Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/select/id/VT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "select", "id", "VT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Local\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"International\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/update/VT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "update", "VT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/delete/VT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "delete", "VT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/vendor-type/remove/VT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "vendor-type", "remove", "VT001"]}}}
+      ]
+    },
+    {
+      "name": "Book",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/select/id/B001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "select", "id", "B001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"book_name\": \"Test Book\",\n  \"author\": \"Test Author\",\n  \"price\": 29.99,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/book/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"book_name\": \"Updated Book\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/book/update/B001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "update", "B001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/delete/B001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "delete", "B001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book/remove/B001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book", "remove", "B001"]}}}
+      ]
+    },
+    {
+      "name": "Book Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/select/id/BT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "select", "id", "BT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Fiction\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/book-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Non-Fiction\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/book-type/update/BT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "update", "BT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/delete/BT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "delete", "BT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/book-type/remove/BT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "book-type", "remove", "BT001"]}}}
+      ]
+    },
+    {
+      "name": "Discount",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/select/id/D001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "select", "id", "D001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"discount_name\": \"10% Off\",\n  \"is_percent\": true,\n  \"discount_value\": 10.0,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/discount/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"discount_name\": \"20% Off\",\n  \"discount_value\": 20.0,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/discount/update/D001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "update", "D001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/delete/D001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "delete", "D001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount/remove/D001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount", "remove", "D001"]}}}
+      ]
+    },
+    {
+      "name": "Discount Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/select/id/DT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "select", "id", "DT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Seasonal\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Clearance\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/update/DT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "update", "DT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/delete/DT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "delete", "DT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/discount-type/remove/DT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "discount-type", "remove", "DT001"]}}}
+      ]
+    },
+    {
+      "name": "Unit Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/select/id/UT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "select", "id", "UT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"PCS\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"BOX\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/update/UT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "update", "UT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/delete/UT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "delete", "UT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/unit-type/remove/UT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "unit-type", "remove", "UT001"]}}}
+      ]
+    },
+    {
+      "name": "Product Format Type",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/select/id/PFT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "select", "id", "PFT001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Hardcover\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"type_name\": \"Paperback\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/update/PFT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "update", "PFT001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/delete/PFT001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "delete", "PFT001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-format-type/remove/PFT001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-format-type", "remove", "PFT001"]}}}
+      ]
+    },
+    {
+      "name": "Product Category",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/select/id/PC001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "select", "id", "PC001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"category_name\": \"Electronics\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-category/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"category_name\": \"Stationery\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-category/update/PC001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "update", "PC001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/delete/PC001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "delete", "PC001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-category/remove/PC001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-category", "remove", "PC001"]}}}
+      ]
+    },
+    {
+      "name": "Product Group",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/select/id/PG001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "select", "id", "PG001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"group_name\": \"Books\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-group/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"group_name\": \"Supplies\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product-group/update/PG001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "update", "PG001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/delete/PG001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "delete", "PG001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product-group/remove/PG001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product-group", "remove", "PG001"]}}}
+      ]
+    },
+    {
+      "name": "Warehouse",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/select/id/W001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "select", "id", "W001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"warehouse_name\": \"Main Warehouse\",\n  \"location\": \"Building A\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"warehouse_name\": \"Secondary Warehouse\",\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/update/W001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "update", "W001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/delete/W001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "delete", "W001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/warehouse/remove/W001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "warehouse", "remove", "W001"]}}}
+      ]
+    },
+    {
+      "name": "Product",
+      "item": [
+        {"name": "Select All", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/all", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "all"]}}},
+        {"name": "Select Page", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/page?page=1&limit=10", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "page"], "query": [{"key": "page", "value": "1"}, {"key": "limit", "value": "10"}]}}},
+        {"name": "Select By ID", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/select/id/PDTA000001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "select", "id", "PDTA000001"]}}},
+        {"name": "Select By Name", "request": {"method": "GET", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/select/name/test", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "select", "name", "test"]}}},
+        {"name": "Insert", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"product_code\": \"PC001\",\n  \"product_name\": \"Test Product\",\n  \"product_group_id\": \"PG001\",\n  \"count_stock\": true,\n  \"cost_price\": 10.00,\n  \"sell_price\": 15.00,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product/insert", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "insert"]}}},
+        {"name": "Update By ID", "request": {"method": "PUT", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\n  \"product_name\": \"Updated Product\",\n  \"sell_price\": 20.00,\n  \"update_by\": \"admin\"\n}"}, "url": {"raw": "{{base_url}}/api/v1/protected/product/update/PDTA000001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "update", "PDTA000001"]}}},
+        {"name": "Delete By ID (Soft)", "request": {"method": "PUT", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/delete/PDTA000001?user=admin", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "delete", "PDTA000001"], "query": [{"key": "user", "value": "admin"}]}}},
+        {"name": "Remove By ID (Hard)", "request": {"method": "DELETE", "header": [], "url": {"raw": "{{base_url}}/api/v1/protected/product/remove/PDTA000001", "host": ["{{base_url}}"], "path": ["api", "v1", "protected", "product", "remove", "PDTA000001"]}}}
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8089",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
