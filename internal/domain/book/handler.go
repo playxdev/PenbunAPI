@@ -300,8 +300,7 @@ func insertRow(
 	cols = append(cols, "update_by")
 	phs = append(phs, a.Add(updateBy))
 
-	q := fmt.Sprintf("INSERT INTO dbo.%s (%s) OUTPUT INSERTED.autoID VALUES (%s)",
-		table, strings.Join(cols, ", "), strings.Join(phs, ", "))
+	q := repository.InsertReturningAuto(table, cols, phs)
 
 	var autoID int
 	err := tx.QueryRowContext(ctx, q, a.Values()...).Scan(&autoID)

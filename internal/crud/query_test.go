@@ -105,6 +105,12 @@ func TestBuildInsert_OutputsAutoIDOnly(t *testing.T) {
 	assert.Contains(t, q, "OUTPUT INSERTED.autoID")
 	assert.NotContains(t, q, "INSERTED.customer_id")
 
+	// ทุกตารางของ v7 มี Trigger AFTER INSERT ซึ่งทำให้ SQL Server ปฏิเสธ
+	// OUTPUT ที่ไม่มี INTO — เคยทำให้การสร้างข้อมูลทุกชนิดล้มด้วย 500
+	assert.Contains(t, q, "OUTPUT INSERTED.autoID INTO @pb_inserted")
+	assert.Contains(t, q, "DECLARE @pb_inserted TABLE (autoID INT)")
+	assert.Contains(t, q, "SELECT autoID FROM @pb_inserted")
+
 	// update_by ต่อท้ายเสมอและมาจาก parameter ไม่ใช่จากการต่อ string
 	assert.Contains(t, q, "update_by")
 	assert.Equal(t, "somchai", args[len(args)-1])

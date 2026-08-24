@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"penbun/api/internal/repository"
 	"penbun/api/internal/schema"
 )
 
@@ -93,13 +94,10 @@ func (r *Resource) buildGetByAuto(autoID int) (string, []any) {
 	return fmt.Sprintf("SELECT TOP 1 * FROM %s WHERE %s = %s", r.Source, r.AutoColumn, ph), a.Values()
 }
 
-// buildInsert สร้าง INSERT พร้อม OUTPUT INSERTED.autoID
+// buildInsert สร้าง INSERT ที่คืน autoID กลับมา
 //
-// ห้าม OUTPUT คอลัมน์ Business ID เด็ดขาด
-//
-// Trigger ที่สร้าง Business ID เป็นชนิด AFTER INSERT ซึ่ง UPDATE แถวตามหลัง
-// ค่าที่ OUTPUT คืนคือค่า ณ ตอน INSERT ซึ่งยังเป็น NULL อยู่
-// ต้องเอา autoID ไป SELECT จาก Source ต่อในทรานแซกชันเดียวกันเสมอ
+// รูปแบบคำสั่งอยู่ที่ repository.InsertReturningAuto ที่เดียว เพราะกฎของ
+// SQL Server เรื่อง OUTPUT กับ Trigger ใช้กับทุกเส้นทางที่เขียนตารางของ v7
 func (r *Resource) buildInsert(vals map[string]any, refs map[string]int, updateBy string) (string, []any) {
 	a := &schema.Args{}
 	cols := make([]string, 0, len(vals)+len(refs)+1)
@@ -118,9 +116,7 @@ func (r *Resource) buildInsert(vals map[string]any, refs map[string]int, updateB
 
 	// ไม่ส่ง prefix / <table>_id / update_date / is_active / is_delete / id_status
 	// ทั้งหมดมี DEFAULT constraint หรือ Trigger ดูแลอยู่แล้วครบทุกตาราง
-	q := fmt.Sprintf("INSERT INTO dbo.%s (%s) OUTPUT INSERTED.autoID VALUES (%s)",
-		r.Table, strings.Join(cols, ", "), strings.Join(phs, ", "))
-	return q, a.Values()
+	return repository.InsertReturningAuto(r.Table, cols, phs), a.Values()
 }
 
 // buildUpdate ตั้งค่าเฉพาะคอลัมน์ที่ client ส่งมาจริงในรอบนี้

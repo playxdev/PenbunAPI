@@ -66,8 +66,7 @@ func (r *Repo) InsertHeader(
 	cols = append(cols, "doc_status", "update_by")
 	phs = append(phs, a.Add(StatusDraft), a.Add(updateBy))
 
-	q := fmt.Sprintf("INSERT INTO dbo.%s (%s) OUTPUT INSERTED.autoID VALUES (%s)",
-		s.HeaderTable, strings.Join(cols, ", "), strings.Join(phs, ", "))
+	q := repository.InsertReturningAuto(s.HeaderTable, cols, phs)
 
 	var autoID int
 	err := tx.QueryRowContext(ctx, q, a.Values()...).Scan(&autoID)
