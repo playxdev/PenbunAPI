@@ -1,0 +1,23 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/company"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "company_code": "PB01",
+      "name_th": "เพ็ญบุญ ดิสทริบิวชั่น",
+      "name_en": "Penbun Distribution",
+      "tax_id": "0105500000001",
+      "branch_code": "00000",
+      "address": "123 ถนนพระราม 4",
+      "province": "กรุงเทพมหานคร",
+      "zip_code": "10500",
+      "phone": "021234567",
+      "email": "info@penbun.co.th",
+      "website": "https://penbun.co.th"
+    }
+order: 3000

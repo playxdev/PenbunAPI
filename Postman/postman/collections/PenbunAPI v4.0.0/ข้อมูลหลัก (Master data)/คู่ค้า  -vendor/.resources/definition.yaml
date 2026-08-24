@@ -1,0 +1,4 @@
+$kind: collection
+name: คู่ค้า  /vendor
+description: "⚠ QC: field 'note' เขียนลง tb_vendor ได้ แต่ vw_vendor ไม่ select กลับมา — เป็นฟิลด์เขียนอย่างเดียว"
+order: 11000

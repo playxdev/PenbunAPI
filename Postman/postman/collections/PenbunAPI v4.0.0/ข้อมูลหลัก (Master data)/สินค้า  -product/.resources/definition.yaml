@@ -1,0 +1,4 @@
+$kind: collection
+name: สินค้า  /product
+description: "⚠ QC: 'description' เขียนได้แต่ vw_product ไม่คืนกลับมา"
+order: 16000

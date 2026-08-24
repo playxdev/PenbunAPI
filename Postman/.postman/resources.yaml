@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: a7abc52f-ab79-4ab2-988c-10ae99760aa4
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/PenbunAPI v4.0.0: 43f51188-9121-4b18-8e29-52962b682dff
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

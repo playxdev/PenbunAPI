@@ -1,241 +1,349 @@
-# PenbunAPI v3.2.0
+# PenbunAPI v4.0.0
 
-RESTful API for managing distribution and supply of books and stationery — built with Go + Fiber + MSSQL.
-
----
-
-## Features
-
-- **Authentication** – JWT login/logout with bcrypt password hashing + token blacklist
-- **14 Master Data Modules** – 8 standard CRUD functions per module (112 endpoints)
-- **Global Error Handler** – Centralized `middleware.GlobalErrorHandler` for consistent JSON error responses
-- **Transaction Safety** – `utils.ExecuteTransaction()` with panic recovery + step logging
-- **Partial Updates** – `COALESCE(NULLIF(...))` pattern for PATCH-like PUT
-- **Soft Delete** – `is_delete = 1` with `update_by` tracking
-- **Pagination** – `?page=&limit=` on all Select Page endpoints
-- **LIKE Search** – `?name=` with `%LIKE%` pattern for Select By Name
-- **Consistent Response** – `{status, message, data}` across all endpoints
-- **Audit Logging** – Transaction steps logged to `logs/transaction.log`
-- **Graceful Shutdown** – Safe server stop on SIGINT/SIGTERM
-- **Testing** – 73 unit tests with race detection
+ระบบจัดการศูนย์กระจายสินค้าหนังสือและเครื่องเขียน
+Go 1.26 · Fiber v3.5.0 · MSSQL · JWT
 
 ---
 
-## Quick Start
+## 1. หลักการออกแบบ
+
+| | |
+| :--- | :--- |
+| **ฐานข้อมูลเป็นเจ้าของกฎ** | กฎที่บังคับได้ด้วย Trigger, Foreign Key, CHECK หรือ Stored Procedure ไม่เขียนซ้ำในโค้ด การเช็คซ้ำที่ไม่ตรงกันอันตรายกว่าการไม่เช็ค เพราะสร้างภาพลวงว่าปลอดภัย |
+| **อ่านผ่าน View เขียนผ่าน Table/SP** | ทุก `SELECT` ยิงที่ View หรือ derived table ที่กรองแถวที่ถูกลบแล้ว การแตะสต็อกเรียก Stored Procedure เท่านั้น |
+| **รหัสธุรกิจคือหน้าบ้าน** | ผู้เรียกเห็นและส่งแต่รหัสแบบ `CUSA000041` ส่วน `autoID` ที่ใช้ผูกความสัมพันธ์ถูกซ่อนไว้ในชั้น resolver |
+| **ตัวตนมาจาก token** | `update_by` มาจาก JWT เสมอ ไม่เคยรับจาก query string หรือ body |
+| **สิ่งที่ทำซ้ำได้ ต้องประกาศไม่ใช่เขียน** | master data 18 ตัวและเอกสาร 4 ชนิดเป็น descriptor ไม่ใช่ handler รายตัว |
+
+---
+
+## 2. โครงสร้าง
+
+```
+penbun-api/
+├── Makefile
+├── Dockerfile
+├── go.mod
+├── .env.example
+├── .gitignore
+├── README.md
+├── main.go                              ประกอบทุกชิ้นเข้าด้วยกัน + ปิดระบบอย่างเรียบร้อย
+│
+├── .github/workflows/ci.yml             format · layering · test · build
+├── scripts/check-layering.sh             กฎการพึ่งพาระหว่างชั้น
+├── docs/
+│   ├── ARCHITECTURE.md                   เหตุผลของการตัดสินใจที่ยังส่งผลอยู่
+│   └── DATABASE-CONTRACT.md              สัญญาที่ API พึ่งพาจากฐานข้อมูล
+├── deploy/
+│   ├── docker-compose.yml                MSSQL สำหรับพัฒนาบนเครื่อง
+│   └── sql/                              สคริปต์ schema ที่ผ่านการรีวิว
+├── test/integration/                     เทสต์ฐานข้อมูลจริง (`-tags=integration`)
+│
+└── internal/                            Go บังคับเองว่า module ภายนอก import ไม่ได้
+    │
+    ├── config/                          ── ชั้นตั้งค่า
+    │   ├── config.go                    อ่าน env + ตรวจความครบถ้วนแบบล้มทันที
+    │   └── database.go                  connection pool (driver "sqlserver")
+    │
+    ├── schema/                          ── ชั้นคำอธิบายข้อมูล (ไม่รู้จัก HTTP verb และ SQL)
+    │   ├── field.go                     Kind / Field / Ref / Filter
+    │   ├── coerce.go                    แปลงและตรวจค่าจาก JSON
+    │   └── args.go                      ตัวสะสมพารามิเตอร์ @pN
+    │
+    ├── platform/                        ── ชั้นพื้นฐาน (ไม่รู้จักธุรกิจ)
+    │   ├── httpx/
+    │   │   ├── envelope.go              รูปแบบ response เดียวของทั้งระบบ
+    │   │   ├── errors.go                AppError + ตัวจัดการ error กลาง
+    │   │   └── sqlerr.go                ตารางแปล error ของฐานข้อมูล → HTTP
+    │   ├── logx/
+    │   │   └── logx.go                  slog handler บรรทัดเดียว + โซนเวลา +7
+    │   └── mw/
+    │       ├── auth.go                  JWT · TokenStore · สิทธิ์ · เส้นทางสาธารณะ
+    │       └── logger.go                access log หนึ่งบรรทัดต่อหนึ่งคำขอ
+    │
+    ├── repository/                      ── ชั้นเข้าถึงข้อมูล (ห้าม import fiber)
+    │   ├── db.go                        WithTx · retry เมื่อ deadlock · AppLock
+    │   ├── scan.go                      แปลงชนิดข้อมูลให้พร้อมเป็น JSON
+    │   └── resolver.go                  รหัสธุรกิจ → autoID + cache
+    │
+    ├── crud/                            ── เครื่องยนต์ที่ 1 : master data
+    │   ├── resource.go                  descriptor
+    │   ├── query.go                     ตัวประกอบ SQL
+    │   ├── engine.go                    5 endpoint ต่อ resource
+    │   └── query_test.go
+    │
+    ├── resources/                       ── descriptor 18 ตัว (ห้าม import fiber)
+    │   ├── registry.go                  All() · Validate()
+    │   ├── company.go                   บริษัท · ส่วนลด
+    │   ├── lookup.go                    ตารางอ้างอิง 7 ตัว
+    │   ├── master.go                    คลัง · กลุ่มสินค้า · คู่ค้า · ลูกค้า · สาย
+    │   ├── product.go                   สินค้า · SKU · หนังสือ
+    │   └── registry_test.go
+    │
+    └── domain/                          ── ส่วนที่มีตรรกะเฉพาะ
+        ├── document/                    เครื่องยนต์ที่ 2 : เอกสาร
+        │   ├── spec.go                  descriptor
+        │   ├── repo.go                  header+items · batch insert · เรียก SP
+        │   ├── handler.go               9 endpoint + วงจรสถานะ + จองล็อกก่อนโพสต์
+        │   ├── specs.go                 spec ของเอกสารทั้ง 4 ชนิด
+        │   └── specs_test.go
+        ├── auth/
+        │   ├── repo.go                  ตารางผู้ใช้ + ฟิลด์ควบคุมการเข้าสู่ระบบ
+        │   ├── service.go               ล็อกบัญชี · บังคับเปลี่ยนรหัส · หมุน token
+        │   └── handler.go
+        ├── book/
+        │   └── handler.go               เขียนสองตารางในทรานแซกชันเดียว
+        ├── stock/
+        │   ├── repo.go                  ทางเดียวที่โค้ดแตะสต็อกได้
+        │   └── handler.go               คงเหลือ · เคลื่อนไหว · ปรับ · โอน · สร้างใหม่
+        ├── allocation/
+        │   └── handler.go               ประวัติการจัดส่ง + เสนอยอดงวดใหม่
+        └── meta/
+            └── handler.go               ค่า enum ที่อ่านจาก CHECK constraint จริง
+```
+
+**กฎที่บังคับด้วย CI:** `repository/`, `resources/` และ `schema/` ห้าม import `fiber`
+ถ้าเผลอ import แปลว่าตรรกะของ HTTP รั่วลงชั้นข้อมูลแล้ว
+
+> ข้อยกเว้นที่รู้ตัว: `schema` import `httpx` เพื่อคืน error ที่ระบุชื่อฟิลด์ได้
+> เป็นการแลกความบริสุทธิ์ของชั้นกับคุณภาพของข้อความ error ซึ่งคุ้มสำหรับระบบที่มี
+> ทางออกทาง HTTP ทางเดียว ถ้าวันหนึ่งต้องมีทางออกอื่น ให้แยก error ของ schema
+> ออกมาเป็นชนิดของตัวเองแล้วให้ httpx เป็นคนแปล
+
+---
+
+## 3. เริ่มใช้งาน
 
 ```bash
-# Prerequisites: Go 1.26+, MSSQL Server
-
-git clone <repo> && cd PenbunAPI
-go mod tidy
-
-# Configure .env
 cp .env.example .env
-# Edit DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, JWT_SECRET
+openssl rand -base64 48        # ใส่เป็น JWT_SECRET
+# ตั้ง DB_PASSWORD และ CORS_ORIGINS ด้วย
 
-go run main.go
-# Server starts on :8089 (configurable via FIBER_PORT)
+make tidy
+make run
 ```
+
+process จะไม่เริ่มทำงานถ้า `JWT_SECRET`, `DB_PASSWORD` หรือ `CORS_ORIGINS` ไม่ได้ตั้ง
+หรือ descriptor ตัวใดตัวหนึ่งไม่ถูกต้อง — ตั้งใจให้ล้มตั้งแต่ตอนเริ่ม ดีกว่าไปพังตอนมีคนใช้
+
+```bash
+make test        # เทสต์ที่ไม่ต้องใช้ฐานข้อมูล
+make vet
+make build
+```
+
+สำหรับ integration test ให้เริ่มฐานข้อมูลด้วย `docker compose -f deploy/docker-compose.yml up -d`
+และตั้ง `PENBUN_INTEGRATION_DB_DSN` ก่อนรัน `make test-integration`.
 
 ---
 
-## Project Structure
+## 4. สองเรื่องที่ต้องอ่านก่อนแก้โค้ด
 
+### 4.1 รหัสธุรกิจอ่านกลับจาก View ไม่ใช่จาก OUTPUT
+
+Trigger ที่สร้างรหัสธุรกิจทำงาน**หลัง**คำสั่ง `INSERT` จบ ค่าที่ `OUTPUT` คืน
+จึงเป็นค่า ณ ตอน `INSERT` ซึ่งยังว่างอยู่
+
+```sql
+-- ✅ ถูก
+INSERT ... OUTPUT INSERTED.autoID VALUES (...)   -- ได้ autoID
+SELECT * FROM vw_x WHERE x_auto = @autoID        -- ในทรานแซกชันเดียวกัน
+
+-- ❌ ผิด — ได้ค่าว่างทุกครั้ง
+INSERT ... OUTPUT INSERTED.customer_id VALUES (...)
 ```
-PenbunAPI/
-├── main.go                    # Entry point + Fiber config + graceful shutdown
-├── config/
-│   ├── env.go                 # Environment variable loading
-│   ├── database.go            # MSSQL connection pool
-│   ├── blacklist.go           # Thread-safe token blacklist
-│   └── logger.go              # Transaction log file
-├── middleware/
-│   ├── jwt.go                 # JWT Bearer validation
-│   └── error.go               # Global error handler
-├── controllers/
-│   ├── auth.go                # Login / Logout
-│   ├── customer.go
-│   ├── customerType.go
-│   ├── vendor.go
-│   ├── vendorType.go
-│   ├── book.go
-│   ├── bookType.go
-│   ├── discount.go
-│   ├── discountType.go
-│   ├── productFormatType.go
-│   ├── productCategory.go
-│   ├── productGroup.go
-│   ├── unitType.go
-│   └── warehouse.go
-├── models/
-│   ├── api.go                 # ApiResponse struct
-│   ├── user.go                # User + LoginRequest
-│   └── ...                    # 14 entity structs
-├── routes/
-│   ├── public.go              # /api/v1/public/*
-│   ├── v1.go                  # /api/v1/protected/*
-│   └── v2.go                  # Placeholder for future
-├── utils/
-│   ├── transaction.go         # ExecuteTransaction with rollback
-│   └── response.go            # JSON response helpers
-├── logs/                      # Transaction audit logs
-├── docs/                      # Documentation
-├── .env                       # Environment variables
-├── *_test.go                  # 73 tests
-└── go.mod
+
+ทั้ง `crud.Engine.create`, `document.Repo.InsertHeader` และ `book.Handler.create`
+ทำแบบแรกทั้งหมด
+
+### 4.2 ต้องจองล็อกก่อนทุกครั้งที่แตะสต็อก
+
+การตรวจว่าสต็อกพอ กับการหักสต็อกจริง เป็นคนละคำสั่งกัน
+ถ้าเอกสารสองใบที่กินสินค้าตัวเดียวกันจากคลังเดียวกันเข้ามาพร้อมกัน ทั้งคู่จะอ่าน
+ยอดคงเหลือค่าเดิม ผ่านการตรวจทั้งคู่ แล้วหักซ้อนกันจนติดลบทั้งที่คลังไม่ได้เปิด
+`allow_negative_stock`
+
+ทุกเส้นทางที่เรียก `stock.ApplyMovement` หรือ Stored Procedure ที่โพสต์เอกสาร
+ต้องครอบด้วย
+
+```go
+repository.AppLock(ctx, tx, fmt.Sprintf("PENBUN:STOCK:%d:%d", skuAuto, whAuto), waitMS)
 ```
+
+**จองเรียงตาม autoID จากน้อยไปมากเสมอ** ถ้าสองเส้นทางจองสลับลำดับกันจะเกิด deadlock
+`Spec.LockPairsSQL` ทุกตัวจึงมี `ORDER BY` และมีเทสต์บังคับข้อนี้ไว้
+
+> การล็อกฝั่งนี้ป้องกันได้เฉพาะทางเข้าผ่าน API เท่านั้น
+> การเพิ่ม hint ล็อกในตัว Stored Procedure จะปลอดภัยกว่า เพราะครอบคลุมถึงคนที่
+> เรียกกระบวนงานตรงจากเครื่องมือจัดการฐานข้อมูล
 
 ---
 
-## API Reference
+## 5. เพิ่มของใหม่
 
-### Authentication
+### เพิ่ม master resource
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/public/login` | Login, returns JWT |
-| POST | `/api/v1/public/logout` | Blacklist token (requires auth) |
+เขียน descriptor แล้วต่อท้าย `resources.All()` — ได้ครบ 5 endpoint ทันที
+ไม่ต้องเขียน handler, SQL หรือเทสต์ของ CRUD เลย
 
-### Master Data (all protected)
-
-Each module has 8 endpoints under `/api/v1/protected/{module}`:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/all` | Select all (is_delete = 0) |
-| GET | `/page?page=1&limit=10` | Paginated results |
-| GET | `/select/id/:id` | Select by code/ID |
-| GET | `/select/name/:name` | LIKE search by name |
-| POST | `/insert` | Create new record |
-| PUT | `/update/:id` | Partial update |
-| PUT | `/delete/:id?user=USER` | Soft delete |
-| DELETE | `/remove/:id` | Hard delete |
-
-#### Available Modules
-
-| Module | Endpoint | Table |
-|--------|----------|-------|
-| Customer | `/customer/*` | `tb_customer` |
-| Customer Type | `/customer-type/*` | `tb_customer_type` |
-| Vendor | `/vendor/*` | `tb_vendor` |
-| Vendor Type | `/vendor-type/*` | `tb_vendor_type` |
-| Book | `/book/*` | `tb_book` |
-| Book Type | `/book-type/*` | `tb_book_type` |
-| Discount | `/discount/*` | `tb_discount` |
-| Discount Type | `/discount-type/*` | `tb_discount_type` |
-| Unit Type | `/unit-type/*` | `tb_unit_type` |
-| Product Format Type | `/product-format-type/*` | `tb_product_format_type` |
-| Product Category | `/product-category/*` | `tb_product_category` |
-| Product Group | `/product-group/*` | `tb_product_group` |
-| Warehouse | `/warehouse/*` | `tb_warehouse` |
-| Product | `/product/*` | `tb_product` |
-
----
-
-## Response Format
-
-```json
-{
-  "status": "success | fail | error",
-  "message": "Human-readable message",
-  "data": { ... }
+```go
+var Supplier = &crud.Resource{
+	Name:          "supplier",
+	Label:         "ซัพพลายเออร์",
+	Source:        "dbo.vw_supplier",
+	Table:         "tb_supplier",
+	IDColumn:      "supplier_id",
+	AutoColumn:    "supplier_auto",
+	SearchColumns: []string{"supplier_name"},
+	SortColumns:   map[string]string{"name": "supplier_name", "updated": "update_date"},
+	DefaultSort:   "updated",
+	Refs: []schema.Ref{
+		{Field: "supplier_type_id", Table: "tb_supplier_type",
+			Column: "ref_supplier_type_auto", Label: "ประเภท", Required: true},
+	},
+	Fields: []schema.Field{
+		{Name: "supplier_name", Kind: schema.KindString, Required: true, MaxLen: 200, Label: "ชื่อ"},
+	},
 }
 ```
 
-**Login response** additionally includes `"token": "jwt..."`.
+### เพิ่มเอกสารชนิดใหม่
+
+เขียน `document.Spec` แล้วต่อท้าย `document.All()` — ได้ครบ 9 endpoint
+พร้อมวงจรสถานะและการจองล็อกก่อนโพสต์
+
+`Spec.Validate()` จะปฏิเสธ spec ที่ไม่ได้ระบุ `LockPairsSQL` หรือ `TotalsSQL`
+เพื่อไม่ให้เผลอสร้างเอกสารที่โพสต์ได้โดยไม่ล็อกหรือไม่คำนวณยอดรวมใหม่
 
 ---
 
-## Environment Variables
+## 6. แผนที่ endpoint
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DB_HOST` | `localhost` | MSSQL host |
-| `DB_PORT` | `1433` | MSSQL port |
-| `DB_USER` | `sa` | Database user |
-| `DB_PASSWORD` | — | Database password |
-| `DB_NAME` | `PENBUN` | Database name |
-| `FIBER_PORT` | `8089` | Server port |
-| `JWT_SECRET` | `default-secret` | JWT signing key |
-| `LOG_FILE` | `logs/transaction.log` | Transaction log path |
-
----
-
-## Database Schema (18 Tables)
-
-All tables share universal audit columns:
-
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `autoID` | `INT IDENTITY` | — | Primary key (not exposed in API) |
-| `prefix` | `NVARCHAR(3)` | per table | Business ID prefix (e.g. `CUS`, `PDT`) |
-| `is_active` | `BIT` | `1` | Technical: record enabled/disabled |
-| `is_delete` | `BIT` | `0` | Soft delete flag |
-| `id_status` | `NVARCHAR(20)` | `'ACTIVE'` | Business workflow state |
-| `update_by` | `NVARCHAR(50)` | `'System'` | Operator username |
-| `update_date` | `DATETIME` | `SYSDATETIMEOFFSET() AT TIME ZONE 'SE Asia Standard Time'` | Auto-set timestamp |
-
-### Entity Tables & Columns
-
-| # | Table | Specific Columns |
-|---|-------|-----------------|
-| 1 | `tb_book` | `book_id`, `book_name`, `author`, `price` |
-| 2 | `tb_book_type` | `book_type_id`, `type_name`, `description` |
-| 3 | `tb_company` | `company_id`, `company_code`, `name_th`, `name_en`, `description`, `tax_id`, `branch_code`, `contact_person`, `phone`, `mobile`, `fax`, `email`, `website`, `line_id`, `address`, `sub_district`, `district`, `province`, `zip_code`, `logo_url`, `vat_rate` |
-| 4 | `tb_customer` | `customer_id`, `customer_type_id`, `customer_name`, `tax_id`, `branch_name`, `contact_person`, `phone1`, `phone2`, `email`, `line_id`, `address`, `sub_district`, `district`, `province`, `zip_code`, `credit_limit`, `credit_term_day`, `note` |
-| 5 | `tb_customer_type` | `customer_type_id`, `type_name`, `description`, `base_credit_day` |
-| 6 | `tb_discount` | `discount_id`, `discount_type_id`, `discount_name`, `discount_code`, `description`, `discount_value`, `is_percent`, `min_order_amount`, `start_date`, `end_date` |
-| 7 | `tb_discount_type` | `discount_type_id`, `discount_type_name`, `description` |
-| 8 | `tb_product` | `product_id`, `product_code`, `product_name`, `product_group_id`, `product_format_type_id`, `unit_type_id`, `vendor_id`, `count_stock`, `cost_price`, `sell_price`, `barcode`, `weight_kg`, `description` |
-| 9 | `tb_product_category` | `product_category_id`, `category_name`, `category_code`, `description` |
-| 10 | `tb_product_format_type` | `product_format_type_id`, `format_name`, `description` |
-| 11 | `tb_product_group` | `product_group_id`, `product_category_id`, `product_group_name`, `description` |
-| 12 | `tb_product_sku` | `sku_id`, `ref_product_id`, `barcode`, `vendor_part_no`, `variation_name`, `issue_no`, `volume_no`, `edition_label`, `cost_price`, `sell_price`, `description` |
-| 13 | `tb_reference` | `ref_id` (PK), `ref_int`, `ref_text` |
-| 14 | `tb_unit_type` | `unit_type_id`, `unit_type_name`, `description` |
-| 15 | `tb_users` | `user_name` (unique), `user_password`, `user_level`, `user_id` |
-| 16 | `tb_vendor` | `vendor_id`, `vendor_type_id`, `vendor_name`, `tax_id`, `branch_name`, `contact_person`, `phone1`, `phone2`, `email`, `website`, `address`, `sub_district`, `district`, `province`, `zip_code`, `credit_term_day`, `currency`, `note` |
-| 17 | `tb_vendor_type` | `vendor_type_id`, `type_name`, `description` |
-| 18 | `tb_warehouse` | `warehouse_id`, `warehouse_code`, `warehouse_name`, `description`, `is_main_dc`, `allow_negative_stock`, `location` (computed = `description`) |
+| กลุ่ม | เส้นทาง | จำนวน |
+| :--- | :--- | ---: |
+| การเข้าสู่ระบบ | `/auth/login` `/refresh` `/me` `/change-password` `/logout` · `/users/{id}/unlock` | 6 |
+| Master data | 18 resource × 5 | 90 |
+| เอกสาร | `receive-note` `order` `return-note` `vendor-return-note` × 9 | 36 |
+| หนังสือ | `POST` `PUT` `DELETE /book` | 3 |
+| สต็อก | `onhand` `movements` `adjust` `transfer` `rebuild` | 5 |
+| ฝากขาย | `outstanding` `rebuild` | 2 |
+| การจัดสรร | `history` `pull` | 2 |
+| ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` | 4 |
+| | **รวม** | **148** |
 
 ---
 
-## Testing
+## 7. รูปแบบ response
 
-```bash
-# Unit tests with race detection
-go test -race -short ./...
+ทุกคำตอบใช้รูปแบบเดียวกันเสมอ ไม่มีข้อยกเว้น
 
-# Coverage report
-go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
-
-# Integration tests (requires live DB)
-go test -tags=integration ./...
+```json
+{
+  "status": "success",
+  "message": "พบข้อมูลลูกค้า 128 รายการ",
+  "code": "OK",
+  "data": { "items": [], "page": 1, "limit": 50, "total": 128, "total_pages": 3 },
+  "trace_id": "3f9a2b71"
+}
 ```
 
-**Current:** 73 unit tests + 4 integration tests, 0 failed, 0 races across 6 packages.
+หน้าจอควรเขียนเงื่อนไขจาก `code` เท่านั้น **ห้ามอ่านจาก `message`** เพราะข้อความ
+ปรับถ้อยคำได้ตลอดโดยไม่ถือเป็นการเปลี่ยนสัญญา
+
+| `code` | HTTP | ความหมาย |
+| :--- | ---: | :--- |
+| `VALIDATION_FAILED` `FIELD_REQUIRED` `REF_NOT_FOUND` `INVALID_ENUM` `VALUE_OUT_OF_RANGE` | 400 | ผู้ใช้แก้ได้ ดู `errors[]` |
+| `UNAUTHORIZED` `TOKEN_EXPIRED` | 401 | `TOKEN_EXPIRED` แปลว่าให้เรียก `/auth/refresh` ไม่ใช่เด้งออกไปหน้าเข้าสู่ระบบ |
+| `FORBIDDEN` `MUST_CHANGE_PASSWORD` | 403 | |
+| `NOT_FOUND` | 404 | |
+| `DUPLICATE` `REF_IN_USE` `INSUFFICIENT_STOCK` `ALREADY_POSTED` | 409 | |
+| `ENDPOINT_REMOVED` | 410 | เส้นทางรุ่นก่อน ให้ไปแก้โค้ดฝั่งผู้เรียก |
+| `ACCOUNT_LOCKED` | 423 | |
+| `BUSINESS_RULE` | 422 | `message` มาจากกฎในฐานข้อมูลโดยตรง แสดงให้ผู้ใช้อ่านได้เลย |
+| `INTERNAL` `DB_UNAVAILABLE` | 500 · 503 | ใช้ `trace_id` ตามหาบรรทัด `ERROR` ใน log (ดูหัวข้อ 8) |
 
 ---
 
-## Libraries
+## 8. บันทึกการทำงาน
 
-| Library | Purpose |
-|---------|---------|
-| [Fiber v2](https://gofiber.io/) | Web framework |
-| [go-mssqldb](https://github.com/denisenkom/go-mssqldb) | MSSQL driver |
-| [Recover](https://docs.gofiber.io/api/middleware/recover) | Panic recovery middleware |
-| [CORS](https://docs.gofiber.io/api/middleware/cors) | Cross-origin resource sharing |
-| [golang-jwt v5](https://github.com/golang-jwt/jwt) | JWT auth |
-| [bcrypt](https://pkg.go.dev/golang.org/x/crypto/bcrypt) | Password hashing |
-| [godotenv](https://github.com/joho/godotenv) | .env loader |
-| [testify](https://github.com/stretchr/testify) | Test assertions |
+หนึ่งคำขอได้หนึ่งบรรทัด ทุกบรรทัดขึ้นต้นด้วยเวลารูปแบบเดียวกัน
+
+```
+20260824-21:15:04 | POST /auth/login | 401 | ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+20260824-21:15:04 | GET /users | 403 | กรุณาเปลี่ยนรหัสผ่านก่อนใช้งานระบบ
+20260824-21:15:04 | GET /auth/me | 200 | OK
+```
+
+| ช่อง | ที่มา |
+| :--- | :--- |
+| เวลา | `YYYYMMDD-HH:mm:ss` ที่ UTC+7 เสมอ ไม่ว่าเครื่องที่รันจะตั้งโซนเวลาอะไรไว้ |
+| method + path | ตัด `/api/v2` ออกแล้ว เหลือเฉพาะส่วนที่ต่างกันจริง |
+| status | รหัส HTTP |
+| ข้อความ | `message` ใน response ถ้าไม่มีก็ใช้ข้อความมาตรฐานของ status code |
+
+โซนเวลาตั้งด้วย `time.FixedZone` ไม่ใช่ `TimeZone: "Asia/Bangkok"` เพราะชื่อโซน
+ต้องมี tzdata ติดมากับ image ด้วย ถ้าไม่มี Fiber จะตกกลับไปใช้เวลาของเครื่องเงียบ ๆ
+ประเทศไทยไม่มี DST offset ตายตัวจึงถูกต้องตลอดปี
+
+**4xx ไม่มีบรรทัดที่สอง** เพราะบรรทัดข้างบนบอกครบแล้ว ส่วน 5xx ได้บรรทัดเพิ่ม
+เพื่อบันทึก error ต้นทางซึ่งไม่เคยถูกส่งออกไปหาผู้เรียก จึงไม่มีทางโผล่ใน access log
+
+```
+20260824-21:15:04 | POST /documents | 500 | ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง
+20260824-21:15:04 | ERROR | request failed | method=POST path=/api/v2/documents code=INTERNAL error="mssql: deadlock victim" trace_id=3f9a2b71
+```
+
+บรรทัดของ slog ใช้รูปแบบ `เวลา | ระดับ | ข้อความ | key=value ...` โดยใส่เครื่องหมาย
+คำพูดเฉพาะค่าที่มีช่องว่างอยู่ข้างใน ระดับต่ำสุดที่พิมพ์ตั้งด้วย `LOG_LEVEL`
+(`debug` `info` `warn` `error` ค่าเริ่มต้น `info`)
+
+`trace_id` ยาว 8 ตัวอักษร ใช้จับคู่สิ่งที่ผู้ใช้แจ้งมากับบรรทัดใน log เท่านั้น
+ไม่ได้เป็นคีย์ในฐานข้อมูลและไม่ต้องเดาไม่ได้
 
 ---
 
-## Changelog
+## 9. วงจรของเอกสาร
 
-See [docs/CHANGELOG.md](docs/CHANGELOG.md).
+```
+ใบรับสินค้า        DRAFT → CONFIRMED → POSTED                 → (CANCELLED)
+ใบส่งหนังสือ       DRAFT → CONFIRMED → DELIVERED → INVOICED   → (CANCELLED)
+ใบรับคืน           DRAFT → CONFIRMED → POSTED → CREDITED      → (CANCELLED)
+ใบส่งคืนคู่ค้า      DRAFT → CONFIRMED → POSTED → SETTLED       → (CANCELLED)
+```
 
-## License
+* ใบส่งจบที่ `DELIVERED` ไม่ใช่ `POSTED` เหมือนอีกสามชนิด — หน้าจอต้องรู้ข้อนี้
+* แก้รายการได้เฉพาะตอน `DRAFT`
+* ยกเลิกได้เฉพาะ `DRAFT` และ `CONFIRMED` เอกสารที่โพสต์แล้วต้องออกเอกสารกลับรายการ
+  เพราะบัญชีการเคลื่อนไหวสต็อกเป็นแบบเพิ่มอย่างเดียว
+* ใบรับคืนกำหนดคลังปลายทางจากสภาพสินค้าเป็นรายบรรทัด ของชำรุดจะไม่ปนกลับเข้าคลังที่ใช้ขาย
+* ใบส่งแบบฝากขาย **ต้องระบุ `period_key`** มิฉะนั้นจะไม่ถูกบันทึกลงประวัติ และการเสนอ
+  ยอดของงวดถัดไปจะมองไม่เห็นรอบนี้ ซึ่งกว่าจะรู้ตัวคือเดือนถัดไปและแก้ย้อนหลังไม่ได้
 
-PENBUN License.
+---
+
+## 10. เทสต์ที่ต้องมีก่อนขึ้นใช้งานจริง
+
+รันบนฐานข้อมูลจริงในคอนเทนเนอร์ ข้อ 6 คือข้อที่จะ**ล้ม**ถ้าการจองล็อกหลุดไปจาก
+เส้นทางใดเส้นทางหนึ่ง — ตั้งใจให้ล้ม
+
+1. สร้างข้อมูลแล้วรหัสธุรกิจถูกเติมจริง ไม่ซ้ำ ไม่ข้าม
+2. สร้างพร้อมกัน 50 เส้น → เลขต้องต่อเนื่อง
+3. ลบแล้วแถวยังอยู่ · `is_delete=1` · `is_active=0` · `id_status='DELETED'`
+4. ลบตารางแม่ที่ยังมีลูกอ้างอยู่ → `409 REF_IN_USE`
+5. เดินครบวงจร รับเข้า → ส่งออก → รับคืน → ส่งคืนคู่ค้า แล้วเทียบยอดกับที่คำนวณมือ
+6. **โพสต์สองใบพร้อมกันบนสินค้าและคลังเดียวกันที่สต็อกพอใบเดียว → สำเร็จ 1 ล้มเหลว 1**
+7. โพสต์เกินสต็อก → `409 INSUFFICIENT_STOCK` และสต็อกต้องไม่ขยับเลย
+8. โพสต์ซ้ำ → `409 ALREADY_POSTED`
+9. สร้างยอดคงเหลือใหม่จากบัญชีการเคลื่อนไหว แล้วยอดต้องเท่าเดิมทุกแถว
+
+---
+
+## 11. ข้อจำกัดที่รู้ตัว
+
+| | |
+| :--- | :--- |
+| รายการ token ที่ถูกเพิกถอนเก็บในหน่วยความจำ | หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance รุ่นนี้จึงรองรับ instance เดียว มี `TokenStore` เป็น interface เตรียมไว้เปลี่ยนแล้ว |
+| ยังไม่มีกระบวนงานกลับรายการ | เอกสารที่โพสต์แล้วแก้ไม่ได้ ต้องให้ผู้ดูแลระบบใช้ `/stock/adjust` ไปก่อน |
+| 9 resource ยังไม่มี View รองรับ | ใช้ derived table และคอมเมนต์ `TEMP:` กำกับไว้ทุกจุด เปลี่ยนเป็นชื่อ View ได้ทันทีที่ฝั่งฐานข้อมูลเพิ่มให้ |
+| การควบคุมสิทธิ์ยังหยาบ | มีแค่ระดับผู้ดูแลกับผู้ใช้ทั่วไป รอตารางบทบาทและสิทธิ์ |
+| รายการเอกสารใหญ่มากอาจช้า | กระบวนงานที่โพสต์เอกสารทำงานทีละรายการ ปรับได้ที่ฝั่งฐานข้อมูลเท่านั้น |

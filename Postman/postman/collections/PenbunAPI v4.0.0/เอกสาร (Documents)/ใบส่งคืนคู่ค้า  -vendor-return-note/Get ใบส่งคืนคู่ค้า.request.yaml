@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 · data = {header, items}
+url: "{{api}}/vendor-return-note/{{vendor_return_note_id}}"
+method: GET
+order: 2000

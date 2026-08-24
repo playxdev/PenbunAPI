@@ -1,0 +1,5 @@
+$kind: http-request
+description: 204 · soft delete เฉพาะ DRAFT
+url: "{{api}}/order/{{order_id}}"
+method: DELETE
+order: 9000

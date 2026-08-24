@@ -1,0 +1,7 @@
+$kind: http-request
+description: |-
+  เพิกถอน jti ของ token ปัจจุบัน.
+  ⚠ รายการที่เพิกถอนเก็บในหน่วยความจำ — หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance
+url: "{{api}}/auth/logout"
+method: POST
+order: 5000

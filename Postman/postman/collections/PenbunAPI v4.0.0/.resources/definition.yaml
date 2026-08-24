@@ -1,0 +1,94 @@
+$kind: collection
+description: |-
+  ระบบจัดการศูนย์กระจายสินค้าหนังสือและเครื่องเขียน — Go 1.26 · Fiber v3 · MSSQL · JWT
+
+  ## เริ่มใช้งาน
+  1. ตั้ง collection variable `base_url` (ค่าเริ่มต้น http://localhost:8089)
+  2. ตั้ง `username` / `password`
+  3. ยิง **การเข้าสู่ระบบ → Login** — test script จะเก็บ access_token ให้อัตโนมัติ
+  4. ทุก request ที่เหลือใช้ Bearer token จาก collection auth
+
+  ## รูปแบบ response
+  ทุกคำตอบใช้ envelope เดียวกันเสมอ:
+  ```json
+  {"status":"success","message":"...","code":"OK",
+   "data":{},"trace_id":"01J8XQ..."}
+  ```
+  หน้าจอต้องเขียนเงื่อนไขจาก `code` เท่านั้น **ห้ามอ่านจาก `message`**
+
+  | code | HTTP |
+  | :--- | ---: |
+  | VALIDATION_FAILED · FIELD_REQUIRED · REF_NOT_FOUND · INVALID_ENUM · VALUE_OUT_OF_RANGE | 400 |
+  | UNAUTHORIZED · TOKEN_EXPIRED | 401 |
+  | FORBIDDEN · MUST_CHANGE_PASSWORD | 403 |
+  | NOT_FOUND | 404 |
+  | DUPLICATE · REF_IN_USE · INSUFFICIENT_STOCK · ALREADY_POSTED | 409 |
+  | ENDPOINT_REMOVED | 410 |
+  | BUSINESS_RULE | 422 |
+  | ACCOUNT_LOCKED | 423 |
+  | INTERNAL · DB_UNAVAILABLE | 500 · 503 |
+
+  `TOKEN_EXPIRED` แปลว่าให้เรียก `/auth/refresh` ไม่ใช่เด้งออกไปหน้าเข้าสู่ระบบ
+
+  ## ⚠ endpoint ที่ QC พบว่ายังใช้ไม่ได้กับ DB v7
+  - `company` ทั้ง 5 เส้น — descriptor อ้างคอลัมน์ `branch_name` ที่ไม่มีใน `tb_company`
+  - `POST /return-note` — `ref_warehouse_auto` เป็น NOT NULL แต่ spec ไม่ได้ส่งค่า
+  - `POST /allocation/pull` — ส่ง `@CustomerAuto` ที่ proc ของ v7 ไม่มี
+  - `GET /customer-route?is_active=` — `vw_customer_route` ไม่มีคอลัมน์ `is_active`
+  - `POST /book` ที่ส่ง `translator` — `tb_book` ไม่มีคอลัมน์นี้
+
+  รายละเอียดอยู่ในคำอธิบายของแต่ละ request
+variables:
+  base_url: http://localhost:8089
+  api: "{{base_url}}/api/v2"
+  username: admin
+  password: ""
+  access_token: ""
+  refresh_token: ""
+  user_id: ""
+  target_user_id: USRA000001
+  company_id: ""
+  customer_type_id: ""
+  vendor_type_id: ""
+  discount_type_id: ""
+  product_category_id: ""
+  product_format_type_id: ""
+  unit_type_id: ""
+  book_type_id: ""
+  warehouse_id: ""
+  product_group_id: ""
+  vendor_id: ""
+  customer_id: ""
+  discount_id: ""
+  route_id: ""
+  customer_route_id: ""
+  product_id: ""
+  product_sku_id: ""
+  book_id: ""
+  sku_id: ""
+  receive_note_id: ""
+  order_id: ""
+  return_note_id: ""
+  vendor_return_note_id: ""
+scripts:
+  - type: http:afterResponse
+    code: |-
+      // ตรวจ envelope กลางของทุก endpoint
+      if (pm.response.code !== 204 && pm.response.headers.get('Content-Type')
+              && pm.response.headers.get('Content-Type').includes('json')) {
+          const res = pm.response.json();
+          pm.test('envelope มี status / code / trace_id', function () {
+              pm.expect(res).to.have.property('status');
+              pm.expect(res).to.have.property('code');
+          });
+          if (res.code === 'TOKEN_EXPIRED') {
+              console.warn('access token หมดอายุ — ยิง POST /auth/refresh');
+          }
+      }
+    language: text/javascript
+auth:
+  - id: 3b83e8b5-5b10-491f-9a73-883bcdbda842
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{access_token}}"

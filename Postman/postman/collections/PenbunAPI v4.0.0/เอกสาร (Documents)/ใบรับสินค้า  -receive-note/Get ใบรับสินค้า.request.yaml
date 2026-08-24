@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 · data = {header, items}
+url: "{{api}}/receive-note/{{receive_note_id}}"
+method: GET
+order: 2000

@@ -1,0 +1,5 @@
+$kind: http-request
+description: 204 · soft delete (is_delete=1); trigger ตั้ง is_active=0 และ id_status='DELETED' ให้เอง. แถวที่ยังมีลูกอ้างอยู่ตอบ 409 REF_IN_USE
+url: "{{api}}/product-group/{{product_group_id}}"
+method: DELETE
+order: 5000

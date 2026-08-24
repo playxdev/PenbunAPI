@@ -1,0 +1,4 @@
+$kind: collection
+name: คลังสินค้า  /warehouse
+description: warehouse_code แก้ภายหลังไม่ได้ (NoUpdate). โค้ด RET / DMG ถูกใช้โดย USP_POST_RETURN
+order: 9000

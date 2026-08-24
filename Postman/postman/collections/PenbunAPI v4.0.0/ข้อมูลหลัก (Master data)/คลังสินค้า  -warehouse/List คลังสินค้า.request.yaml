@@ -1,0 +1,34 @@
+$kind: http-request
+description: 200 · envelope data = {items, page, limit, total, total_pages}
+url: "{{api}}/warehouse?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: q
+    value: ""
+    disabled: true
+    description: ค้นหาแบบ LIKE ใน SearchColumns
+  - key: sort
+    value: code
+    disabled: true
+    description: code | name | updated  (นำหน้าด้วย - เพื่อเรียงจากมากไปน้อย)
+  - key: is_active
+    value: "true"
+    disabled: true
+    description: true | false
+  - key: warehouse_type
+    value: DC
+    disabled: true
+    description: DC | BRANCH | RETURN | DAMAGED | PROVINCE | INTERNATIONAL
+  - key: province
+    value: กรุงเทพมหานคร
+    disabled: true
+    description: ""
+order: 1000

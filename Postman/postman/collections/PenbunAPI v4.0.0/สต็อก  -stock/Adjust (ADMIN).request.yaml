@@ -1,0 +1,21 @@
+$kind: http-request
+description: |-
+  201 · qty_change ต้องไม่เป็น 0 (ติดลบได้). remark บังคับ.
+  จอง app lock PENBUN:STOCK:{sku}:{wh} ก่อนเรียก USP_APPLY_STOCK_MOVEMENT.
+  409 INSUFFICIENT_STOCK ถ้าคลังไม่ได้เปิด allow_negative_stock
+
+  ⚠ QC: remark ถูกบังคับให้กรอก แต่ไม่เคยถูกส่งไปที่ proc และ proc ก็ไม่มีพารามิเตอร์ @Remark — tb_stock_movement.remark เป็น NULL เสมอ (audit trail หาย)
+url: "{{api}}/stock/adjust"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "sku_id": "{{sku_id}}",
+      "warehouse_code": "DC",
+      "qty_change": -2,
+      "remark": "ของเสียหายจากการขนส่ง"
+    }
+order: 3000

@@ -1,0 +1,3 @@
+$kind: collection
+description: 18 resource สร้างจาก descriptor ตัวเดียวกัน — engine กลางให้ 5 endpoint ต่อ resource (book อ่านอย่างเดียว จึงมีแค่ 2)
+order: 2000

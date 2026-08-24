@@ -1,0 +1,7 @@
+$kind: collection
+name: ใบรับสินค้า  /receive-note
+description: |-
+  วงจรสถานะ: DRAFT → CONFIRMED → POSTED → (CANCELLED)
+
+  trade_type ไม่บังคับส่ง ถ้าไม่ระบุจะใช้ DEFAULT ของคอลัมน์ (CONSIGN) — การกรอกผิดทำให้ยอดจ่ายคืนเจ้าของสินค้าผิดทั้งงวด
+order: 1000

@@ -1,0 +1,17 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/customer-route"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "customer_id": "{{customer_id}}",
+      "route_id": "{{route_id}}",
+      "is_primary": true,
+      "delivery_seq": 1,
+      "description": "จุดจอดแรกของสาย"
+    }
+order: 3000

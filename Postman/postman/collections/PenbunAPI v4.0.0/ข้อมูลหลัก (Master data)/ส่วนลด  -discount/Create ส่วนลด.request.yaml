@@ -1,0 +1,21 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/discount"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "discount_code": "D10",
+      "discount_name": "ลด 10%",
+      "discount_type_id": "{{discount_type_id}}",
+      "discount_value": 10,
+      "is_percent": true,
+      "min_order_amount": 5000,
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "description": "ส่วนลดประจำปี"
+    }
+order: 3000

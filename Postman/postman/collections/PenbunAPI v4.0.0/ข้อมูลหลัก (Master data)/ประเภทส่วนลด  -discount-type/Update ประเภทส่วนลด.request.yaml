@@ -1,0 +1,13 @@
+$kind: http-request
+description: 200 · partial update — ส่งเฉพาะคอลัมน์ที่ต้องการแก้
+url: "{{api}}/discount-type/{{discount_type_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "description": "ลดขั้นบันได"
+    }
+order: 4000

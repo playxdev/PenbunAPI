@@ -1,0 +1,38 @@
+$kind: http-request
+description: เรียงตาม doc_date DESC เสมอ
+url: "{{api}}/return-note?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: doc_status
+    value: DRAFT
+    disabled: true
+    description: DRAFT | CONFIRMED | ... | CANCELLED
+  - key: doc_no
+    value: ""
+    disabled: true
+    description: ค้นหาแบบ LIKE
+  - key: date_from
+    value: 2026-08-01
+    disabled: true
+    description: yyyy-mm-dd (>=)
+  - key: date_to
+    value: 2026-08-31
+    disabled: true
+    description: yyyy-mm-dd (<= ทั้งวัน)
+  - key: customer_id
+    value: "{{customer_id}}"
+    disabled: true
+    description: ""
+  - key: period_key
+    value: 2026-08
+    disabled: true
+    description: ""
+order: 1000

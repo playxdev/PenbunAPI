@@ -1,0 +1,13 @@
+$kind: http-request
+description: 200 · partial update — ส่งเฉพาะคอลัมน์ที่ต้องการแก้
+url: "{{api}}/product-category/{{product_category_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "category_name": "หนังสือและนิตยสาร"
+    }
+order: 4000

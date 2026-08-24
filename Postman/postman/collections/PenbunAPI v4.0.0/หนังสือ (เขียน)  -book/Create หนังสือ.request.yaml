@@ -1,0 +1,40 @@
+$kind: http-request
+description: |-
+  201 · เขียน tb_product + tb_book ในทรานแซกชันเดียว (UQ_tb_book_product บังคับ 1:1).
+  product_name ยึดตาม book_name ถ้าไม่ระบุแยก. count_stock ถูกตั้งเป็น true เสมอ ส่งมาเองไม่ได้.
+  'book_description' map ไป tb_book.description ส่วน 'description' ไป tb_product.description
+
+  ⚠ QC: อย่าส่ง 'translator' — descriptor ประกาศไว้แต่ tb_book ของ v7 ไม่มีคอลัมน์นี้ จะได้ 500 (SQL error 207)
+url: "{{api}}/book"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_code": "B0001",
+      "book_name": "หนังสือตัวอย่าง",
+      "author": "ผู้แต่งตัวอย่าง",
+      "isbn": "9786160000001",
+      "publisher_name": "สำนักพิมพ์ตัวอย่าง",
+      "page_count": 320,
+      "cover_price": 295,
+      "net_price": 250,
+      "vendor_discount_percent": 40,
+      "customer_discount_percent": 25,
+      "effective_date": "2026-08-01",
+      "book_description": "เรื่องย่อของหนังสือ",
+      "book_type_id": "{{book_type_id}}",
+      "product_group_id": "{{product_group_id}}",
+      "product_format_type_id": "{{product_format_type_id}}",
+      "unit_type_id": "{{unit_type_id}}",
+      "vendor_id": "{{vendor_id}}",
+      "cost_price": 150,
+      "sell_price": 295,
+      "barcode": "8850000000025",
+      "weight_kg": 0.4,
+      "pack_qty": 10,
+      "description": "รายละเอียดฝั่งสินค้า"
+    }
+order: 1000

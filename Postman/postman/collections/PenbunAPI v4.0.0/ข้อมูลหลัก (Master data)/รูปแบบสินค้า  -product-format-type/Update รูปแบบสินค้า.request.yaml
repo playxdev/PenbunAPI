@@ -1,0 +1,13 @@
+$kind: http-request
+description: 200 · partial update — ส่งเฉพาะคอลัมน์ที่ต้องการแก้
+url: "{{api}}/product-format-type/{{product_format_type_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "description": "ปกอ่อนเย็บกี่"
+    }
+order: 4000

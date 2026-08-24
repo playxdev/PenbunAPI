@@ -1,0 +1,13 @@
+$kind: http-request
+description: 200 · partial update — ส่งเฉพาะคอลัมน์ที่ต้องการแก้
+url: "{{api}}/product-sku/{{product_sku_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cover_price": 110
+    }
+order: 4000

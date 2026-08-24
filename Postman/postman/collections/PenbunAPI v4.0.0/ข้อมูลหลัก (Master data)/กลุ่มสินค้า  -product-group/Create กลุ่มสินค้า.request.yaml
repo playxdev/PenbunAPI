@@ -1,0 +1,15 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/product-group"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_group_name": "การ์ตูนญี่ปุ่น",
+      "description": "มังงะแปลไทย",
+      "product_category_id": "{{product_category_id}}"
+    }
+order: 3000

@@ -1,0 +1,4 @@
+$kind: collection
+name: ส่วนลด  /discount
+description: discount_code แก้ภายหลังไม่ได้ (NoUpdate)
+order: 13000

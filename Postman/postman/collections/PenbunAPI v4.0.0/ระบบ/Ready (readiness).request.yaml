@@ -1,0 +1,7 @@
+$kind: http-request
+description: ping ฐานข้อมูล. 503 เมื่อ DB ล่ม — แยกจาก healthz เพื่อไม่ให้ container ถูกรีสตาร์ตทิ้งเปล่า ๆ
+url: "{{base_url}}/readyz"
+method: GET
+auth:
+  type: noauth
+order: 3000

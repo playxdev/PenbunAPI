@@ -1,0 +1,5 @@
+$kind: http-request
+description: อ่านจาก CHECK constraint จริงใน sys.check_constraints แทนการเขียนรายการซ้ำในโค้ด (cache 10 นาที). key = <table ไม่มี tb_>_<column>
+url: "{{api}}/meta/enums"
+method: GET
+order: 1000

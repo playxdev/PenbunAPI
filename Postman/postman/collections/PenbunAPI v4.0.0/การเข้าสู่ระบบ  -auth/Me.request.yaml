@@ -1,0 +1,5 @@
+$kind: http-request
+description: เข้าได้แม้ต้องเปลี่ยนรหัสผ่านก่อน
+url: "{{api}}/auth/me"
+method: GET
+order: 3000

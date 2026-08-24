@@ -1,0 +1,38 @@
+$kind: http-request
+description: อ่านจาก vw_stock_onhand (cache) — ความจริงอยู่ที่ tb_stock_movement
+url: "{{api}}/stock/onhand?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: warehouse_code
+    value: DC
+    disabled: true
+    description: ""
+  - key: sku_id
+    value: "{{sku_id}}"
+    disabled: true
+    description: ""
+  - key: product_id
+    value: "{{product_id}}"
+    disabled: true
+    description: ""
+  - key: q
+    value: ""
+    disabled: true
+    description: ค้นหาใน product_name, sku_code
+  - key: only_positive
+    value: "true"
+    disabled: true
+    description: true = เฉพาะแถวที่ qty_onhand <> 0
+  - key: below
+    value: "10"
+    disabled: true
+    description: qty_available ต่ำกว่าค่านี้ (จุดสั่งซื้อซ้ำ)
+order: 1000

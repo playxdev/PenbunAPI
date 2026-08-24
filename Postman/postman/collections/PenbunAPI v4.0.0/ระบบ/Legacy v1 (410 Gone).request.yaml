@@ -1,0 +1,7 @@
+$kind: http-request
+description: 410 ENDPOINT_REMOVED — เส้นทางรุ่นก่อนถูกถอดออกโดยตั้งใจ ให้ไปแก้โค้ดฝั่งผู้เรียก
+url: "{{base_url}}/api/v1/customer"
+method: GET
+auth:
+  type: noauth
+order: 5000

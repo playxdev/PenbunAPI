@@ -1,0 +1,5 @@
+$kind: http-request
+description: 202 · สร้าง tb_consign_balance ใหม่จากเอกสารที่โพสต์แล้ว
+url: "{{api}}/consign/rebuild"
+method: POST
+order: 2000

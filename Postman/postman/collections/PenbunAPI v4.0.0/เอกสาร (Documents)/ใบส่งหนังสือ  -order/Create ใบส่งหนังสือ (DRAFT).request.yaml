@@ -1,0 +1,32 @@
+$kind: http-request
+description: 201 · สร้าง header + items ในทรานแซกชันเดียว แล้วคำนวณยอดรวมใหม่จากรายการจริง. ห้ามส่ง doc_status / total_* / net_amount — ระบบเป็นผู้กำหนด
+url: "{{api}}/order"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "doc_no": "ORD-2608-001",
+      "doc_date": "2026-08-23",
+      "remark": "รอบส่งวันจันทร์",
+      "order_type": "CONSIGN",
+      "period_key": "2026-08",
+      "customer_id": "{{customer_id}}",
+      "warehouse_id": "{{warehouse_id}}",
+      "route_id": "{{route_id}}",
+      "company_id": "{{company_id}}",
+      "items": [
+        {
+          "sku_id": "{{sku_id}}",
+          "qty_ordered": 10,
+          "qty_delivered": 10,
+          "cover_price": 100,
+          "unit_price": 70,
+          "discount_percent": 0,
+          "remark": "งวดแรก"
+        }
+      ]
+    }
+order: 3000

@@ -1,0 +1,4 @@
+$kind: collection
+name: การผูกลูกค้ากับสาย  /customer-route
+description: "⚠ QC: vw_customer_route ไม่มีคอลัมน์ is_active — ใส่ ?is_active= แล้ว list ตอบ 500 (SQL 207). 'description' เขียนได้แต่อ่านกลับไม่ได้. ลูกค้าหนึ่งรายมีสายหลักได้สายเดียว (UQ_tb_customer_route_primary)"
+order: 15000

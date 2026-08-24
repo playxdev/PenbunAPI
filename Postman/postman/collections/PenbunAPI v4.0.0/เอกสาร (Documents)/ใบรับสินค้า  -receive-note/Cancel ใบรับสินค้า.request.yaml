@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 · เฉพาะ DRAFT หรือ CONFIRMED. เอกสารที่โพสต์แล้วยกเลิกไม่ได้ ต้องออกเอกสารกลับรายการ เพราะบัญชีการเคลื่อนไหวสต็อกเป็นแบบเพิ่มอย่างเดียว
+url: "{{api}}/receive-note/{{receive_note_id}}/cancel"
+method: PUT
+order: 8000

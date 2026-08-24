@@ -1,0 +1,14 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/vendor-type"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type_name": "สำนักพิมพ์",
+      "description": "เจ้าของลิขสิทธิ์หนังสือ"
+    }
+order: 3000

@@ -1,0 +1,15 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/product-category"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "category_code": "BOOK",
+      "category_name": "หนังสือ",
+      "description": "สิ่งพิมพ์ทุกชนิด"
+    }
+order: 3000

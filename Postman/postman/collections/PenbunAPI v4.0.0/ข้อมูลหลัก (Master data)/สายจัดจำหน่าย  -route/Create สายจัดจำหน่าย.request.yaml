@@ -1,0 +1,19 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/route"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "route_code": "R01",
+      "route_name": "สายกรุงเทพเหนือ",
+      "route_type": "REGION",
+      "region_name": "กลาง",
+      "sort_order": 1,
+      "description": "รอบส่งวันจันทร์",
+      "warehouse_id": "{{warehouse_id}}"
+    }
+order: 3000

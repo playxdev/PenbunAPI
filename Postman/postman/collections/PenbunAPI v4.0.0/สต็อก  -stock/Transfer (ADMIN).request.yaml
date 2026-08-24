@@ -1,0 +1,21 @@
+$kind: http-request
+description: |-
+  201 · qty ต้อง > 0 และคลังต้นทาง/ปลายทางต้องต่างกัน.
+  v7 ไม่มี USP_TRANSFER_STOCK — API เรียก USP_APPLY_STOCK_MOVEMENT สองขา (TRANSFER_OUT / TRANSFER_IN) ในทรานแซกชันเดียว จองล็อกเรียงตาม autoID กันสวนทางกัน.
+
+  ⚠ QC: remark ถูกทิ้งเช่นเดียวกับ /stock/adjust
+url: "{{api}}/stock/transfer"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "sku_id": "{{sku_id}}",
+      "from_warehouse_code": "DC",
+      "to_warehouse_code": "PRO",
+      "qty": 20,
+      "remark": "เติมสต็อกคลังต่างจังหวัด"
+    }
+order: 4000

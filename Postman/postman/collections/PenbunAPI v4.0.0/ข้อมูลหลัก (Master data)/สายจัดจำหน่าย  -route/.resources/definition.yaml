@@ -1,0 +1,4 @@
+$kind: collection
+name: สายจัดจำหน่าย  /route
+description: route_code แก้ภายหลังไม่ได้ (NoUpdate)
+order: 14000

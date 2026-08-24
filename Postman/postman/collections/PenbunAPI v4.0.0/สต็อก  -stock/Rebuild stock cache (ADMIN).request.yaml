@@ -1,0 +1,5 @@
+$kind: http-request
+description: 202 · สร้าง tb_product_stock ใหม่ทั้งหมดจาก tb_stock_movement. ยอดต้องเท่าเดิมทุกแถวถ้าไม่มีใครเขียน cache ตรง ๆ
+url: "{{api}}/stock/rebuild"
+method: POST
+order: 5000

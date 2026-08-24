@@ -1,0 +1,21 @@
+$kind: http-request
+description: 200 · แทนที่รายการทั้งใบ (soft delete ของเดิม + insert ใหม่ + คำนวณยอดรวมใหม่). เฉพาะ DRAFT
+url: "{{api}}/order/{{order_id}}/items"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        {
+          "sku_id": "{{sku_id}}",
+          "qty_ordered": 12,
+          "qty_delivered": 12,
+          "cover_price": 100,
+          "unit_price": 70
+        }
+      ]
+    }
+order: 5000

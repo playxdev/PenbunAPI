@@ -1,0 +1,4 @@
+$kind: collection
+name: หนังสือ  /book  (อ่านผ่าน engine กลาง)
+description: descriptor ตั้ง ReadOnly — engine กลาง mount แค่ GET สองเส้น ส่วน POST/PUT/DELETE อยู่ในโฟลเดอร์ 'หนังสือ (เขียน)' เพราะต้องเขียน tb_product + tb_book ในทรานแซกชันเดียว
+order: 18000

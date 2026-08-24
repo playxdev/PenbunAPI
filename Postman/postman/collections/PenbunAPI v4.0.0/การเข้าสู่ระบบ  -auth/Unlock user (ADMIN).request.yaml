@@ -1,0 +1,5 @@
+$kind: http-request
+description: 403 FORBIDDEN ถ้า user_level ไม่ใช่ ADMIN
+url: "{{api}}/users/{{target_user_id}}/unlock"
+method: PUT
+order: 6000

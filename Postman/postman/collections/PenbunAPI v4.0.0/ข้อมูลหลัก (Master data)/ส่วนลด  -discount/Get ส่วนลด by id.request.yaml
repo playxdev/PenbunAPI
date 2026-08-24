@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 หรือ 404 NOT_FOUND
+url: "{{api}}/discount/{{discount_id}}"
+method: GET
+order: 2000

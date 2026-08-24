@@ -1,1 +1,14 @@
+# ความลับ — ห้ามขึ้น repository
 .env
+*.pem
+*.key
+
+# ผลลัพธ์การ build
+bin/
+*.exe
+
+# เครื่องมือ
+.idea/
+.vscode/
+*.log
+coverage.out

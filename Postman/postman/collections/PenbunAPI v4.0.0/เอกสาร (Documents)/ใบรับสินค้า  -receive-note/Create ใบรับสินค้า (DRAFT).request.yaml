@@ -1,0 +1,29 @@
+$kind: http-request
+description: 201 · สร้าง header + items ในทรานแซกชันเดียว แล้วคำนวณยอดรวมใหม่จากรายการจริง. ห้ามส่ง doc_status / total_* / net_amount — ระบบเป็นผู้กำหนด
+url: "{{api}}/receive-note"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "doc_no": "RCV-2608-001",
+      "doc_date": "2026-08-23",
+      "remark": "รับของงวดสิงหาคม",
+      "trade_type": "CONSIGN",
+      "vendor_doc_no": "INV-8801",
+      "vendor_id": "{{vendor_id}}",
+      "warehouse_id": "{{warehouse_id}}",
+      "company_id": "{{company_id}}",
+      "items": [
+        {
+          "sku_id": "{{sku_id}}",
+          "qty": 100,
+          "unit_cost": 60,
+          "cover_price": 100,
+          "remark": "ลังที่ 1"
+        }
+      ]
+    }
+order: 3000

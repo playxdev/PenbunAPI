@@ -1,0 +1,38 @@
+$kind: http-request
+description: 201 · สร้าง header + items ในทรานแซกชันเดียว แล้วคำนวณยอดรวมใหม่จากรายการจริง. ห้ามส่ง doc_status / total_* / net_amount — ระบบเป็นผู้กำหนด
+url: "{{api}}/return-note"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "doc_no": "RTN-2608-001",
+      "doc_date": "2026-08-23",
+      "remark": "รับคืนงวดสิงหาคม",
+      "period_key": "2026-08",
+      "customer_id": "{{customer_id}}",
+      "ref_order_id": "{{order_id}}",
+      "company_id": "{{company_id}}",
+      "items": [
+        {
+          "sku_id": "{{sku_id}}",
+          "qty_returned": 3,
+          "unit_price": 70,
+          "cover_price": 100,
+          "condition_status": "GOOD",
+          "remark": "สภาพดี"
+        },
+        {
+          "sku_id": "{{sku_id}}",
+          "line_no": 2,
+          "qty_returned": 1,
+          "unit_price": 70,
+          "cover_price": 100,
+          "condition_status": "DAMAGED",
+          "remark": "ปกฉีก"
+        }
+      ]
+    }
+order: 3000

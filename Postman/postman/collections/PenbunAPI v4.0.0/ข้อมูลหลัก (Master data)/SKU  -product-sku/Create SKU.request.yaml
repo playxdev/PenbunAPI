@@ -1,0 +1,27 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/product-sku"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_id": "{{product_id}}",
+      "sku_code": "P0001-2608",
+      "barcode": "8850000000018",
+      "vendor_part_no": "VP-2608",
+      "variation_name": "ฉบับปกติ",
+      "issue_no": "2026-08",
+      "volume_no": "12",
+      "edition_label": "พิมพ์ครั้งที่ 1",
+      "cost_price": 60,
+      "sell_price": 100,
+      "cover_price": 100,
+      "pack_qty": 10,
+      "publication_date": "2026-08-01",
+      "return_deadline": "2026-11-01",
+      "description": "ฉบับเดือนสิงหาคม"
+    }
+order: 3000

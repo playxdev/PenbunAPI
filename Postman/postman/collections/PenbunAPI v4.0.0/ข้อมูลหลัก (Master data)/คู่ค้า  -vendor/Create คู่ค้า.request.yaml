@@ -1,0 +1,30 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/vendor"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "vendor_name": "สำนักพิมพ์ตัวอย่าง",
+      "vendor_type_id": "{{vendor_type_id}}",
+      "trade_type": "CONSIGN",
+      "tax_id": "0105500000002",
+      "contact_person": "คุณสมชาย",
+      "phone1": "021112222",
+      "email": "sales@example.co.th",
+      "province": "กรุงเทพมหานคร",
+      "credit_term_day": 30,
+      "currency": "THB",
+      "consign_share_percent": 40,
+      "settlement_cycle": "MONTHLY",
+      "settlement_day": 15,
+      "return_window_day": 90,
+      "withholding_tax_percent": 3,
+      "bank_name": "กสิกรไทย",
+      "bank_account_no": "1234567890",
+      "note": "ตัวอย่างคู่ค้าฝากขาย"
+    }
+order: 3000

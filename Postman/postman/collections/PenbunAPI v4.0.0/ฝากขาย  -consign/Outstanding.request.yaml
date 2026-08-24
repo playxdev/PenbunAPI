@@ -1,0 +1,26 @@
+$kind: http-request
+description: ยอดฝากขายคงค้างรายลูกค้า × SKU จาก vw_consign_outstanding
+url: "{{api}}/consign/outstanding?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: customer_id
+    value: "{{customer_id}}"
+    disabled: true
+    description: ""
+  - key: sku_id
+    value: "{{sku_id}}"
+    disabled: true
+    description: ""
+  - key: only_outstanding
+    value: "true"
+    disabled: true
+    description: ค่าเริ่มต้น true = เฉพาะ qty_outstanding <> 0
+order: 1000

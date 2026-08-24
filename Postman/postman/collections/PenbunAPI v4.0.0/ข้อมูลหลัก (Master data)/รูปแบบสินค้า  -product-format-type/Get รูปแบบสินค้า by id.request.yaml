@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 หรือ 404 NOT_FOUND
+url: "{{api}}/product-format-type/{{product_format_type_id}}"
+method: GET
+order: 2000

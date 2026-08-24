@@ -1,0 +1,7 @@
+$kind: collection
+name: ใบส่งคืนคู่ค้า  /vendor-return-note
+description: |-
+  วงจรสถานะ: DRAFT → CONFIRMED → POSTED → SETTLED → (CANCELLED)
+
+  ตัดออกจากคลังที่ระบุในหัวเอกสาร ซึ่งปกติคือคลังรับคืน (RET)
+order: 4000

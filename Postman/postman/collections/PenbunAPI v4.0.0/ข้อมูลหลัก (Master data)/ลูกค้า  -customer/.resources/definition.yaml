@@ -1,0 +1,4 @@
+$kind: collection
+name: ลูกค้า  /customer
+description: "⚠ QC: 'line_id' และ 'note' เขียนได้แต่ vw_customer ไม่คืนกลับมา — ฟิลด์เขียนอย่างเดียว"
+order: 12000

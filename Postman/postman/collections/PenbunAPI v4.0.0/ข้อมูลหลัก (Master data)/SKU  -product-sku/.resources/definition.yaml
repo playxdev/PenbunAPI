@@ -1,0 +1,4 @@
+$kind: collection
+name: SKU  /product-sku
+description: "product_id แก้ภายหลังไม่ได้ (NoUpdate). ⚠ QC: 'vendor_part_no' และ 'description' เขียนได้แต่ vw_product_sku ไม่คืนกลับมา"
+order: 17000

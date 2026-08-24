@@ -1,0 +1,9 @@
+$kind: collection
+name: ใบรับคืน  /return-note
+description: |-
+  วงจรสถานะ: DRAFT → CONFIRMED → POSTED → CREDITED → (CANCELLED)
+
+  ⛔ QC BLOCKER: tb_return_note.ref_warehouse_auto เป็น INT NOT NULL ไม่มี DEFAULT และไม่มี trigger แต่ spec ไม่มี HeaderRef ที่ map ไปคอลัมน์นี้ → POST ล้มทุกครั้งด้วย SQL error 515. ต้องเพิ่ม ref warehouse_id ใน specs.go ก่อน endpoint นี้จะใช้งานได้.
+
+  condition_status เป็นตัวกำหนดคลังปลายทางรายบรรทัด: GOOD→คลัง RET, DAMAGED→คลัง DMG
+order: 3000

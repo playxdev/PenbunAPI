@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{api}}/book?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: q
+    value: ""
+    disabled: true
+    description: ค้นหาใน book_name, author, isbn
+  - key: sort
+    value: name
+    disabled: true
+    description: name | author | updated
+  - key: is_active
+    value: "true"
+    disabled: true
+    description: true | false
+  - key: book_type_id
+    value: "{{book_type_id}}"
+    disabled: true
+    description: ""
+  - key: vendor_id
+    value: "{{vendor_id}}"
+    disabled: true
+    description: ""
+order: 1000

@@ -1,0 +1,24 @@
+$kind: http-request
+description: สาธารณะ. เรียกเมื่อได้ 401 TOKEN_EXPIRED — ไม่ต้องเด้งผู้ใช้ออกไปหน้า login
+url: "{{api}}/auth/refresh"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "refresh_token": "{{refresh_token}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+      if (res.status === 'success' && res.data) {
+          pm.collectionVariables.set('access_token', res.data.access_token);
+          pm.collectionVariables.set('refresh_token', res.data.refresh_token);
+      }
+    language: text/javascript
+order: 2000

@@ -1,0 +1,15 @@
+$kind: http-request
+description: 200 · แก้ทั้งสองตารางในทรานแซกชันเดียว ส่งเฉพาะฟิลด์ที่ต้องการแก้
+url: "{{api}}/book/{{book_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "cover_price": 315,
+      "net_price": 265,
+      "book_name": "หนังสือตัวอย่าง (พิมพ์ครั้งที่ 2)"
+    }
+order: 2000

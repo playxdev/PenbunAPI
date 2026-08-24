@@ -1,0 +1,13 @@
+$kind: http-request
+description: 200 · แก้ได้เฉพาะตอน DRAFT เท่านั้น มิฉะนั้น 422 BUSINESS_RULE. doc_no แก้ภายหลังไม่ได้ (NoUpdate)
+url: "{{api}}/vendor-return-note/{{vendor_return_note_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "remark": "ส่งคืนงวดสิงหาคม (แก้ไข)"
+    }
+order: 4000

@@ -1,0 +1,30 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/customer"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "customer_code": "C0001",
+      "customer_name": "ร้านหนังสือตัวอย่าง",
+      "customer_type_id": "{{customer_type_id}}",
+      "report_name": "ร้านหนังสือตัวอย่าง",
+      "tax_id": "0105500000003",
+      "contact_person": "คุณสมหญิง",
+      "phone1": "029998888",
+      "email": "shop@example.co.th",
+      "line_id": "@example",
+      "address": "99 ถนนสุขุมวิท",
+      "province": "กรุงเทพมหานคร",
+      "zip_code": "10110",
+      "credit_limit": 100000,
+      "credit_term_day": 30,
+      "is_vat": true,
+      "invoice_format": "FULL",
+      "discount_group": "A",
+      "note": "ลูกค้าฝากขายรายเดือน"
+    }
+order: 3000

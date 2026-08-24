@@ -1,0 +1,5 @@
+$kind: http-request
+description: 200 · DRAFT → CONFIRMED. เอกสารไม่มีรายการตอบ 422 BUSINESS_RULE
+url: "{{api}}/receive-note/{{receive_note_id}}/confirm"
+method: PUT
+order: 6000

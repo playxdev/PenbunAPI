@@ -1,0 +1,5 @@
+$kind: http-request
+description: 204 · soft delete ทั้ง tb_book และ tb_product พร้อมกัน ไม่งั้นจะเหลือแถวสินค้ากำพร้าที่ยังถูกอ้างในเอกสารได้
+url: "{{api}}/book/{{book_id}}"
+method: DELETE
+order: 3000

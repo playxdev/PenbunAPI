@@ -1,0 +1,14 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/unit-type"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "unit_type_name": "เล่ม",
+      "description": "หน่วยนับหนังสือ"
+    }
+order: 3000

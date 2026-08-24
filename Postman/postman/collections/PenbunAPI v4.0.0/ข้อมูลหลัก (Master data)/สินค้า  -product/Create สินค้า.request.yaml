@@ -1,0 +1,25 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/product"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "product_code": "P0001",
+      "product_name": "นิตยสารตัวอย่าง",
+      "product_group_id": "{{product_group_id}}",
+      "product_format_type_id": "{{product_format_type_id}}",
+      "unit_type_id": "{{unit_type_id}}",
+      "vendor_id": "{{vendor_id}}",
+      "count_stock": true,
+      "cost_price": 60,
+      "sell_price": 100,
+      "barcode": "8850000000001",
+      "weight_kg": 0.25,
+      "pack_qty": 10,
+      "description": "สินค้าตัวอย่าง"
+    }
+order: 3000

@@ -1,0 +1,7 @@
+$kind: collection
+name: ใบส่งหนังสือ  /order
+description: |-
+  วงจรสถานะ: DRAFT → CONFIRMED → DELIVERED → INVOICED → (CANCELLED)  ← จบที่ DELIVERED ไม่ใช่ POSTED
+
+  ใบส่งแบบ CONSIGN ต้องระบุ period_key เสมอ มิฉะนั้น 400 FIELD_REQUIRED — ถ้าไม่มีงวด จะไม่ถูกบันทึกลง tb_allocation_history และการเสนอยอดงวดถัดไปจะมองไม่เห็นรอบนี้. ⚠ QC: 'remark' ของทั้ง header และ item เขียนได้ แต่ vw_order_header / vw_order_item ไม่ select กลับมา
+order: 2000

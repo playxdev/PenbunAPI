@@ -1,0 +1,15 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/customer-type"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type_name": "ร้านค้าส่ง",
+      "description": "ลูกค้าขายส่ง",
+      "base_credit_day": 30
+    }
+order: 3000

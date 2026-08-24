@@ -1,0 +1,7 @@
+$kind: http-request
+description: อยู่นอก /api/v2 — ไม่ต้องมี token
+url: "{{base_url}}/healthz"
+method: GET
+auth:
+  type: noauth
+order: 2000

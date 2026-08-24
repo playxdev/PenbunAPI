@@ -1,0 +1,7 @@
+$kind: http-request
+description: |-
+  200 · เฉพาะ CONFIRMED. จอง application lock ทุกคู่ (SKU, คลัง) เรียงจาก autoID น้อยไปมาก แล้วเรียก Stored Procedure ที่ตัดสต็อกจริง.
+  409 INSUFFICIENT_STOCK · 409 ALREADY_POSTED · 503 DB_UNAVAILABLE (จองล็อกไม่ได้)
+url: "{{api}}/order/{{order_id}}/post"
+method: PUT
+order: 7000

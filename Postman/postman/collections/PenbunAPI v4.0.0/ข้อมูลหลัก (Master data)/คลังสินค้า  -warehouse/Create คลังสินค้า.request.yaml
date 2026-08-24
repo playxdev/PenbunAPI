@@ -1,0 +1,21 @@
+$kind: http-request
+description: 201 · อ่านกลับจาก Source ในทรานแซกชันเดียวกันเพื่อให้ได้ business id ที่ trigger เพิ่งเติม
+url: "{{api}}/warehouse"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "warehouse_code": "DC",
+      "warehouse_name": "คลังกลาง",
+      "warehouse_type": "DC",
+      "is_main_dc": true,
+      "allow_negative_stock": false,
+      "address": "123 ถนนพระราม 4",
+      "province": "กรุงเทพมหานคร",
+      "description": "คลังกระจายสินค้าหลัก",
+      "company_id": "{{company_id}}"
+    }
+order: 3000

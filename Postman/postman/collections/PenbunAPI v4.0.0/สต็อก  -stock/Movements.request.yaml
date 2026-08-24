@@ -1,0 +1,46 @@
+$kind: http-request
+description: ต้องระบุอย่างน้อยหนึ่งใน sku_id / doc_no / date_from / date_to มิฉะนั้น 400 — ตารางนี้ append-only และโตตลอดอายุระบบ
+url: "{{api}}/stock/movements?page=1&limit=50&sku_id={{sku_id}}"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: sku_id
+    value: "{{sku_id}}"
+    disabled: false
+    description: ""
+  - key: warehouse_code
+    value: DC
+    disabled: true
+    description: ""
+  - key: customer_id
+    value: "{{customer_id}}"
+    disabled: true
+    description: ""
+  - key: vendor_id
+    value: "{{vendor_id}}"
+    disabled: true
+    description: ""
+  - key: movement_type
+    value: ISSUE
+    disabled: true
+    description: RECEIVE | ISSUE | RETURN_IN | RETURN_OUT | TRANSFER_IN | TRANSFER_OUT | ADJUST
+  - key: doc_no
+    value: ""
+    disabled: true
+    description: ""
+  - key: date_from
+    value: 2026-08-01
+    disabled: true
+    description: ""
+  - key: date_to
+    value: 2026-08-31
+    disabled: true
+    description: ""
+order: 2000

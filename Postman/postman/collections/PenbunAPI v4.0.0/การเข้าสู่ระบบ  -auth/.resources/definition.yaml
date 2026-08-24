@@ -1,0 +1,4 @@
+$kind: collection
+name: การเข้าสู่ระบบ  /auth
+description: update_by ของทุก endpoint ในระบบมาจาก JWT เสมอ ไม่เคยรับจาก query string หรือ body
+order: 1000

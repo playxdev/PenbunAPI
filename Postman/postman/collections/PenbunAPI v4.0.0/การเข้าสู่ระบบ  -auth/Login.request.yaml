@@ -1,0 +1,33 @@
+$kind: http-request
+description: |-
+  สาธารณะ — ไม่ต้องมี token. Test script เก็บ access_token / refresh_token ลง collection variable ให้อัตโนมัติ.
+  401 UNAUTHORIZED · 423 ACCOUNT_LOCKED (รหัสผิดครบเพดาน)
+url: "{{api}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+      if (res.status === 'success' && res.data) {
+          pm.collectionVariables.set('access_token', res.data.access_token);
+          pm.collectionVariables.set('refresh_token', res.data.refresh_token);
+          pm.collectionVariables.set('user_id', res.data.user.user_id);
+          console.log('token saved, expires_in', res.data.expires_in);
+          if (res.data.user.must_change_password) {
+              console.warn('บัญชีนี้ถูกบังคับเปลี่ยนรหัสผ่าน — ทุก endpoint นอกจาก /auth/me, /auth/change-password, /auth/logout จะตอบ 403 MUST_CHANGE_PASSWORD');
+          }
+      }
+      pm.test('login succeeded', () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 1000

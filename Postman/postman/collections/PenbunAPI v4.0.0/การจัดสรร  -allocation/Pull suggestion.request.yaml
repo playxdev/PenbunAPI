@@ -1,0 +1,21 @@
+$kind: http-request
+description: |-
+  เสนอยอดจัดส่งงวดใหม่จากประวัติงวดก่อน — ไม่เขียนอะไรลงฐานข้อมูลเลย.
+  mode: LAST (ยอดส่งงวดล่าสุด) | AVG (เฉลี่ยย้อนหลัง) | SOLD (ยอดขายสุทธิ, ค่าเริ่มต้น)
+  lookback_count 1-12 (ค่าเริ่มต้น 3). ต้องระบุอย่างน้อย sku_id หรือ customer_id
+
+  ⛔ QC BLOCKER: handler ส่ง @CustomerAuto ไปที่ USP_PULL_ALLOCATION_FROM_HISTORY ซึ่ง v7 ไม่มีพารามิเตอร์นี้ → ทุก request ตอบ 500 (SQL error 8145). และถึงแก้แล้ว proc ก็ยังกรองด้วย customer ไม่ได้ — ตัวอย่างนี้จึงใช้ sku_id เป็นขอบเขต
+url: "{{api}}/allocation/pull"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "sku_id": "{{sku_id}}",
+      "route_id": "{{route_id}}",
+      "mode": "SOLD",
+      "lookback_count": 3
+    }
+order: 2000
