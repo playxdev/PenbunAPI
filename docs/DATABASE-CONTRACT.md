@@ -7,8 +7,13 @@ behaviour. These are deployment prerequisites, not schema definitions.
   omit soft-deleted rows.
 - Tables provide internal `autoID` values while public API references use the
   business IDs resolved by `repository.Resolver`.
-- Insert workflows can re-read through a view in the same transaction after
-  triggers generate a business ID.
+- Every table carries an `AFTER INSERT` trigger that fills the business ID, so
+  an `INSERT` may only `OUTPUT` into a table variable. `OUTPUT` without `INTO`
+  is rejected outright (Msg 334) on every table in the schema, and the business
+  ID column is empty at `OUTPUT` time regardless. The API therefore returns
+  `autoID` through `repository.InsertReturningAuto` and re-reads the row through
+  a view in the same transaction. Dropping or disabling those triggers changes
+  this contract and breaks business ID generation.
 - Stock mutations and document posting are performed through the database
   routines expected by the domain repositories; the API adds application locks
   before these calls.

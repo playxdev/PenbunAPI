@@ -32,7 +32,6 @@ penbun-api/
 ├── .github/workflows/ci.yml             format · layering · test · build
 ├── scripts/check-layering.sh             กฎการพึ่งพาระหว่างชั้น
 ├── docs/
-│   ├── ARCHITECTURE.md                   เหตุผลของการตัดสินใจที่ยังส่งผลอยู่
 │   └── DATABASE-CONTRACT.md              สัญญาที่ API พึ่งพาจากฐานข้อมูล
 ├── deploy/
 │   ├── docker-compose.yml                MSSQL สำหรับพัฒนาบนเครื่อง
@@ -63,6 +62,7 @@ penbun-api/
     │
     ├── repository/                      ── ชั้นเข้าถึงข้อมูล (ห้าม import fiber)
     │   ├── db.go                        WithTx · retry เมื่อ deadlock · AppLock
+    │   ├── insert.go                    ที่อยู่เดียวของ INSERT ... OUTPUT ... INTO (ดูหัวข้อ 4.1)
     │   ├── scan.go                      แปลงชนิดข้อมูลให้พร้อมเป็น JSON
     │   └── resolver.go                  รหัสธุรกิจ → autoID + cache
     │
@@ -139,22 +139,41 @@ make build
 
 ## 4. สองเรื่องที่ต้องอ่านก่อนแก้โค้ด
 
-### 4.1 รหัสธุรกิจอ่านกลับจาก View ไม่ใช่จาก OUTPUT
+### 4.1 รหัสธุรกิจอ่านกลับจาก View และ `OUTPUT` ต้องมี `INTO` เสมอ
 
-Trigger ที่สร้างรหัสธุรกิจทำงาน**หลัง**คำสั่ง `INSERT` จบ ค่าที่ `OUTPUT` คืน
-จึงเป็นค่า ณ ตอน `INSERT` ซึ่งยังว่างอยู่
+มีสองข้อผูกกันอยู่ ทั้งคู่มาจากข้อเท็จจริงเดียว คือ **ทุกตารางใน v7 มี AFTER INSERT trigger**
+(127 ตัวใน 32 ตาราง) ที่ทำงาน**หลัง**คำสั่ง `INSERT` จบ เพื่อเติมรหัสธุรกิจ
+
+**ข้อแรก** ค่าที่ `OUTPUT` คืนเป็นค่า ณ ตอน `INSERT` ซึ่งรหัสธุรกิจยังว่าง จึงคืนได้แค่ `autoID`
+แล้วต้องอ่านแถวกลับจาก View ในทรานแซกชันเดียวกัน
+
+**ข้อสอง** SQL Server ปฏิเสธ `OUTPUT` ที่ไม่มี `INTO` บนตารางที่มี trigger เปิดอยู่
+
+```
+Msg 334 — The target table 'dbo.tb_vendor_type' of the DML statement cannot have
+any enabled triggers if the statement contains an OUTPUT clause without INTO clause.
+```
+
+แปลว่า `OUTPUT INSERTED.autoID VALUES (...)` เฉย ๆ ใช้ไม่ได้กับตารางใดเลยในระบบนี้
 
 ```sql
 -- ✅ ถูก
-INSERT ... OUTPUT INSERTED.autoID VALUES (...)   -- ได้ autoID
-SELECT * FROM vw_x WHERE x_auto = @autoID        -- ในทรานแซกชันเดียวกัน
+DECLARE @pb_inserted TABLE (autoID INT);
+INSERT INTO dbo.tb_x (...) OUTPUT INSERTED.autoID INTO @pb_inserted VALUES (...);
+SELECT autoID FROM @pb_inserted;              -- result set เดียวของ batch
+-- แล้วอ่านแถวกลับ
+SELECT * FROM vw_x WHERE x_auto = @autoID;    -- ในทรานแซกชันเดียวกัน
 
--- ❌ ผิด — ได้ค่าว่างทุกครั้ง
-INSERT ... OUTPUT INSERTED.customer_id VALUES (...)
+-- ❌ ผิด — Msg 334 ทุกตาราง
+INSERT ... OUTPUT INSERTED.autoID VALUES (...)
+
+-- ❌ ผิด — ได้ค่าว่างทุกครั้ง เพราะ trigger ยังไม่ทำงาน
+INSERT ... OUTPUT INSERTED.customer_id INTO @t VALUES (...)
 ```
 
-ทั้ง `crud.Engine.create`, `document.Repo.InsertHeader` และ `book.Handler.create`
-ทำแบบแรกทั้งหมด
+SQL ก้อนนี้มีที่อยู่เดียวคือ `repository.InsertReturningAuto(table, cols, placeholders)`
+ทั้ง `crud.buildInsert`, `document.Repo.InsertHeader` และ `book.Handler.create` เรียกตัวนี้
+ห้ามเขียน `INSERT ... OUTPUT` ด้วยมือที่อื่น
 
 ### 4.2 ต้องจองล็อกก่อนทุกครั้งที่แตะสต็อก
 
@@ -344,6 +363,18 @@ var Supplier = &crud.Resource{
 | :--- | :--- |
 | รายการ token ที่ถูกเพิกถอนเก็บในหน่วยความจำ | หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance รุ่นนี้จึงรองรับ instance เดียว มี `TokenStore` เป็น interface เตรียมไว้เปลี่ยนแล้ว |
 | ยังไม่มีกระบวนงานกลับรายการ | เอกสารที่โพสต์แล้วแก้ไม่ได้ ต้องให้ผู้ดูแลระบบใช้ `/stock/adjust` ไปก่อน |
-| 9 resource ยังไม่มี View รองรับ | ใช้ derived table และคอมเมนต์ `TEMP:` กำกับไว้ทุกจุด เปลี่ยนเป็นชื่อ View ได้ทันทีที่ฝั่งฐานข้อมูลเพิ่มให้ |
+| 12 resource ยังไม่มี View รองรับ | `warehouse` `product-group` `route` `company` `discount` และตารางอ้างอิงอีก 7 ตัว ใช้ derived table และคอมเมนต์ `TEMP:` กำกับไว้ เปลี่ยนเป็นชื่อ View ได้ทันทีที่ฝั่งฐานข้อมูลเพิ่มให้ (PenbunSQL v8) |
 | การควบคุมสิทธิ์ยังหยาบ | มีแค่ระดับผู้ดูแลกับผู้ใช้ทั่วไป รอตารางบทบาทและสิทธิ์ |
 | รายการเอกสารใหญ่มากอาจช้า | กระบวนงานที่โพสต์เอกสารทำงานทีละรายการ ปรับได้ที่ฝั่งฐานข้อมูลเท่านั้น |
+
+---
+
+## 12. เอกสารที่เกี่ยวข้อง
+
+| ไฟล์ | เนื้อหา |
+| :--- | :--- |
+| `docs/DATABASE-CONTRACT.md` | สิ่งที่ API พึ่งพาจากฐานข้อมูล และข้อเสนอถึงผู้ดูแล schema |
+| `../PenbunSQL/README.md` | schema v7.0.0 · View · Stored Procedure · สมมติฐานทางธุรกิจ |
+| `../PenbunSQL/SQL-STANDARD.md` | กฎการตั้งชื่อ · audit column · กฎของ trigger |
+| `../PenbunWeb/README.md` | หน้าจอที่เรียก API นี้ และเครื่องยนต์ master data ฝั่งหน้าเว็บ |
+| `../PENBUN-TODO.md` | งานที่เหลือของทั้งระบบ และตารางจุดที่สัญญายังไม่ตรงกัน |

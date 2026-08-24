@@ -1,6 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
+# Without this guard a missing rg makes every check below silently pass: the
+# failed command is the condition of an `if`, so `set -e` never sees it.
+if ! command -v rg >/dev/null 2>&1; then
+  echo 'check-layering: ripgrep (rg) is required' >&2
+  exit 1
+fi
+
 # Data descriptors and database access must remain usable without an HTTP server.
 for dir in internal/repository internal/resources internal/schema; do
   if rg -n 'github\.com/gofiber/fiber' "$dir"; then
