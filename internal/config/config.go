@@ -59,7 +59,10 @@ func Load() (*Config, error) {
 		DBMaxIdle:    integer("DB_MAX_IDLE", 10),
 		DBConnMaxTTL: duration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
 
-		Port:        str("FIBER_PORT", "8089"),
+		// PORT มาก่อนเสมอ เพราะ platform ที่รันแบบ container/serverless
+		// (Vercel, Cloud Run, Railway) สุ่มพอร์ตให้ใหม่ทุกครั้งที่ boot ผ่าน env ตัวนี้
+		// แล้วรอ probe ที่พอร์ตนั้น ถ้าเราไป bind FIBER_PORT ค้างไว้ process จะถูกฆ่าทิ้ง
+		Port:        str("PORT", str("FIBER_PORT", "8089")),
 		CORSOrigins: list("CORS_ORIGINS"),
 		ReadTimeout: duration("HTTP_READ_TIMEOUT", 30*time.Second),
 		// WriteTimeout ต้องมากกว่า timeout ที่ยาวที่สุดของงาน (POST เอกสาร 60s)
