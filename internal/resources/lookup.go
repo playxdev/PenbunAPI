@@ -33,8 +33,8 @@ var CustomerType = &crud.Resource{
 	},
 	DefaultSort: "updated",
 	Fields: []schema.Field{
-		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภท"},
-		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
+		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 255, Label: "ชื่อประเภท"},
+		{Name: "description", Kind: schema.KindString, MaxLen: 1000, Label: "คำอธิบาย"},
 		{Name: "base_credit_day", Kind: schema.KindInt, Label: "เครดิตพื้นฐาน (วัน)"},
 	},
 }
@@ -51,7 +51,7 @@ var VendorType = &crud.Resource{
 	SortColumns:   map[string]string{"name": "type_name", "updated": "update_date"},
 	DefaultSort:   "updated",
 	Fields: []schema.Field{
-		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภท"},
+		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 150, Label: "ชื่อประเภท"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
 }
@@ -86,7 +86,7 @@ var BookType = &crud.Resource{
 	DefaultSort:   "updated",
 	Fields: []schema.Field{
 		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภท"},
-		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
+		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
 }
 
@@ -122,8 +122,8 @@ var ProductFormatType = &crud.Resource{
 	SortColumns:   map[string]string{"name": "format_name", "updated": "update_date"},
 	DefaultSort:   "updated",
 	Fields: []schema.Field{
-		{Name: "format_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อรูปแบบ"},
-		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
+		{Name: "format_name", Kind: schema.KindString, Required: true, MaxLen: 150, Label: "ชื่อรูปแบบ"},
+		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
 }
 
@@ -141,6 +141,6 @@ var DiscountType = &crud.Resource{
 	DefaultSort:   "updated",
 	Fields: []schema.Field{
 		{Name: "discount_type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภทส่วนลด"},
-		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
+		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
 }

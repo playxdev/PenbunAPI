@@ -77,6 +77,6 @@ var Discount = &crud.Resource{
 			Min: schema.Float64(0)},
 		{Name: "start_date", Kind: schema.KindDate, Label: "วันที่เริ่มใช้"},
 		{Name: "end_date", Kind: schema.KindDate, Label: "วันที่สิ้นสุด"},
-		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
+		{Name: "description", Kind: schema.KindString, MaxLen: 500, Label: "คำอธิบาย"},
 	},
 }
