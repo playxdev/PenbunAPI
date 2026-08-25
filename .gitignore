@@ -12,3 +12,7 @@ bin/
 .vscode/
 *.log
 coverage.out
+
+# Postman CLI สร้าง workspace ซ้ำไว้ที่ราก ชี้ไป workspace เดียวกับ Postman/ ที่ track อยู่
+# ปล่อยไว้จะสับสนว่า collection จริงอยู่ที่ไหน
+penbun-api/
