@@ -1,5 +1,2 @@
 name: Globals
-values:
-  - key: vercel_url
-    value: ''
-    enabled: true
+values: []

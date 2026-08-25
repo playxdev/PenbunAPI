@@ -59,9 +59,10 @@ func Load() (*Config, error) {
 		DBMaxIdle:    integer("DB_MAX_IDLE", 10),
 		DBConnMaxTTL: duration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
 
-		// PORT มาก่อนเสมอ เพราะ platform ที่รันแบบ container/serverless
-		// (Vercel, Cloud Run, Railway) สุ่มพอร์ตให้ใหม่ทุกครั้งที่ boot ผ่าน env ตัวนี้
-		// แล้วรอ probe ที่พอร์ตนั้น ถ้าเราไป bind FIBER_PORT ค้างไว้ process จะถูกฆ่าทิ้ง
+		// PORT มาก่อนเสมอ เพราะ platform ที่รันแบบ container (Cloud Run, Railway)
+		// กำหนดพอร์ตให้ผ่าน env ตัวนี้แล้วรอ probe ที่พอร์ตนั้น
+		// ถ้าเราไป bind FIBER_PORT ค้างไว้ process จะถูกฆ่าทิ้ง
+		// บน Droplet ที่รันด้วย systemd ไม่มีใครตั้ง PORT จึงตกไปใช้ FIBER_PORT ตามปกติ
 		Port:        str("PORT", str("FIBER_PORT", "8089")),
 		CORSOrigins: list("CORS_ORIGINS"),
 		ReadTimeout: duration("HTTP_READ_TIMEOUT", 30*time.Second),
