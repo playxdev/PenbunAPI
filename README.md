@@ -154,8 +154,19 @@ make build
 
 ค่า env ที่ต้องตั้งบน App Platform เหมือน `.env.example` โดยทำ `DB_PASSWORD`
 กับ `JWT_SECRET` เป็นชนิดเข้ารหัส และตั้ง `APP_ENV=production` เพื่อไม่ให้
-ตารางเส้นทางถูกพิมพ์ลง log ตอนเริ่มทำงาน ส่วน `CORS_ORIGINS` ต้องเป็นโดเมนจริง
-ของ PenbunWeb ไม่ใช่ค่า localhost ที่ติดมาจาก `.env`
+ตารางเส้นทางถูกพิมพ์ลง log ตอนเริ่มทำงาน
+
+`CORS_ORIGINS` ต้องมีโดเมนจริงของ PenbunWeb ไม่ใช่ค่า localhost ที่ติดมาจาก `.env`
+คั่นหลายค่าด้วยจุลภาค และห้ามใส่ `*` — `config.go` ปฏิเสธตั้งแต่ตอนเริ่มทำงาน
+เพราะ API ใช้ bearer token
+
+```
+CORS_ORIGINS=https://penbunweb.pages.dev,http://localhost:4173
+```
+
+อีกครึ่งหนึ่งของเรื่องนี้อยู่ฝั่ง PenbunWeb — `connect-src` ใน `public/_headers`
+ต้องมี origin ของ API ด้วย เบราว์เซอร์บล็อกที่ CSP ก่อนจะถาม CORS เสียอีก
+ตั้งถูกข้างเดียวยังยิงไม่ผ่าน
 
 > App Platform ต่อฐานข้อมูลผ่านอินเทอร์เน็ตสาธารณะ ไม่ได้อยู่ใน VPC เดียวกับ Droplet
 > และ IP ขาออกไม่คงที่ถ้าไม่ได้เปิด dedicated egress จึงตั้งกฎ firewall แคบ ๆ ไม่ได้
