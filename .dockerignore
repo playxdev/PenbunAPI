@@ -1,0 +1,29 @@
+# ความลับ — ต้องไม่หลุดเข้า build context ไม่ว่ากรณีใด
+.env
+*.pem
+*.key
+
+# ผลลัพธ์การ build ของเครื่องตัวเอง — binary ในนี้ใช้กับ image ไม่ได้
+bin/
+*.exe
+coverage.out
+
+# ประวัติ git และงานที่ไม่เกี่ยวกับการคอมไพล์
+.git/
+.github/
+.gitignore
+Postman/
+penbun-api/
+docs/
+deploy/
+test/
+scripts/
+Makefile
+README.md
+Dockerfile
+*.md
+*.log
+
+# เครื่องมือ
+.idea/
+.vscode/
