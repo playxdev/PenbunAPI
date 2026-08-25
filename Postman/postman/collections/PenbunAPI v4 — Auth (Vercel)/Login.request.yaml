@@ -1,0 +1,40 @@
+$kind: http-request
+description: |-
+  สาธารณะ — ไม่ต้องมี token. เก็บ access_token / refresh_token ลง collection variable ให้อัตโนมัติ
+  401 UNAUTHORIZED · 423 ACCOUNT_LOCKED
+url: "{{api}}/auth/login"
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: x-vercel-protection-bypass
+    value: "{{vercel_bypass}}"
+  - key: x-vercel-set-bypass-cookie
+    value: "true"
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{username}}",
+      "password": "{{password}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('login succeeded', () => pm.response.to.have.status(200));
+      if (pm.response.code === 401 && !pm.response.headers.get('Content-Type')?.includes('json')) {
+          console.error('ได้หน้า HTML ของ Vercel — Deployment Protection ยังเปิดอยู่ ตั้ง vercel_bypass ก่อน');
+          return;
+      }
+      const res = pm.response.json();
+      if (res.status === 'success' && res.data) {
+          pm.collectionVariables.set('access_token', res.data.access_token);
+          pm.collectionVariables.set('refresh_token', res.data.refresh_token);
+          pm.collectionVariables.set('user_id', res.data.user.user_id);
+          console.log('token saved, expires_in', res.data.expires_in);
+      }
+    language: text/javascript
+order: 1000

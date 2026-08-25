@@ -1,4 +1,5 @@
 $kind: http-request
+name: Version
 url: "{{base_url}}/version"
 method: GET
 auth:

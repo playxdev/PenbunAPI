@@ -3,7 +3,7 @@ description: |-
   ระบบจัดการศูนย์กระจายสินค้าหนังสือและเครื่องเขียน — Go 1.26 · Fiber v3 · MSSQL · JWT
 
   ## เริ่มใช้งาน
-  1. ตั้ง collection variable `base_url` (ค่าเริ่มต้น http://localhost:8089)
+  1. ตั้ง collection variable `base_url` — production https://penbun-api.vercel.app หรือ http://localhost:8089 ตอน dev
   2. ตั้ง `username` / `password`
   3. ยิง **การเข้าสู่ระบบ → Login** — test script จะเก็บ access_token ให้อัตโนมัติ
   4. ทุก request ที่เหลือใช้ Bearer token จาก collection auth
@@ -39,9 +39,9 @@ description: |-
 
   รายละเอียดอยู่ในคำอธิบายของแต่ละ request
 variables:
-  base_url: http://localhost:8089
+  base_url: https://penbun-api.vercel.app
   api: "{{base_url}}/api/v2"
-  username: admin
+  username: root
   password: ""
   access_token: ""
   refresh_token: ""

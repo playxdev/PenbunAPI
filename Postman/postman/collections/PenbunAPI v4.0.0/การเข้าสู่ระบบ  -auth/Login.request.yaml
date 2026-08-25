@@ -1,4 +1,5 @@
 $kind: http-request
+name: Login
 description: |-
   สาธารณะ — ไม่ต้องมี token. Test script เก็บ access_token / refresh_token ลง collection variable ให้อัตโนมัติ.
   401 UNAUTHORIZED · 423 ACCOUNT_LOCKED (รหัสผิดครบเพดาน)

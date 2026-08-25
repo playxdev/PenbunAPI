@@ -1,0 +1,19 @@
+$kind: collection
+description: |-
+  Login / Logout ที่ใช้ได้ทั้ง localhost และ Vercel deployment
+  ตั้ง base_url = https://<project>.vercel.app แล้วใส่ vercel_bypass ถ้าเปิด Deployment Protection
+variables:
+  base_url: https://penbun-api.vercel.app
+  api: "{{base_url}}/api/v2"
+  username: admin
+  password: ""
+  vercel_bypass: ""
+  access_token: ""
+  refresh_token: ""
+  user_id: ""
+auth:
+  - id: ce4ad049-8878-4780-b846-98dde71a1675
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{access_token}}"

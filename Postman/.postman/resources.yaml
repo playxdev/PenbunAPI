@@ -7,6 +7,7 @@ workspace:
 cloudResources:
   collections:
     ../postman/collections/PenbunAPI v4.0.0: 43f51188-9121-4b18-8e29-52962b682dff
+    ../postman/collections/PenbunAPI v4 — Auth (Vercel): e3ed7002-8c7e-42d1-aec9-87f0ac804721
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:
