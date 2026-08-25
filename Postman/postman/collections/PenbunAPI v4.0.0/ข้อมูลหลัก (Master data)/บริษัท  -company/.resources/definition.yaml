@@ -1,4 +1,4 @@
 $kind: collection
 name: บริษัท  /company
-description: "⚠ QC: descriptor เลือก/เขียนคอลัมน์ branch_name ซึ่งไม่มีใน tb_customer ของ v7 — ทุก endpoint ของ resource นี้ตอบ 500 (SQL error 207) จนกว่าจะแก้ company.go"
+description: "ข้อมูลบริษัทเจ้าของระบบ — เคยตอบ 500 ทุกเส้นเพราะ descriptor เลือกคอลัมน์ branch_name ที่ไม่มีใน tb_company แก้แล้วโดยถอด field นั้นออก"
 order: 1000

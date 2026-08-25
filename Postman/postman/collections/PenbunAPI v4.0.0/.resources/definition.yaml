@@ -4,7 +4,7 @@ description: |-
 
   ## เริ่มใช้งาน
   1. ตั้ง collection variable `base_url` — ค่าเริ่มต้นคือ http://localhost:8089 สำหรับ dev
-     ส่วน production ให้ตั้งเป็นโดเมนของ Droplet ที่ Caddy เปิด TLS ไว้
+     ส่วน production ใช้โดเมนของ app บน DigitalOcean App Platform (ขึ้นต้น https)
   2. ตั้ง `username` / `password`
   3. ยิง **การเข้าสู่ระบบ → Login** — test script จะเก็บ access_token ให้อัตโนมัติ
   4. ทุก request ที่เหลือใช้ Bearer token จาก collection auth
@@ -32,13 +32,16 @@ description: |-
   `TOKEN_EXPIRED` แปลว่าให้เรียก `/auth/refresh` ไม่ใช่เด้งออกไปหน้าเข้าสู่ระบบ
 
   ## ⚠ endpoint ที่ QC พบว่ายังใช้ไม่ได้กับ DB v7
-  - `company` ทั้ง 5 เส้น — descriptor อ้างคอลัมน์ `branch_name` ที่ไม่มีใน `tb_company`
   - `POST /return-note` — `ref_warehouse_auto` เป็น NOT NULL แต่ spec ไม่ได้ส่งค่า
   - `POST /allocation/pull` — ส่ง `@CustomerAuto` ที่ proc ของ v7 ไม่มี
   - `GET /customer-route?is_active=` — `vw_customer_route` ไม่มีคอลัมน์ `is_active`
   - `POST /book` ที่ส่ง `translator` — `tb_book` ไม่มีคอลัมน์นี้
 
   รายละเอียดอยู่ในคำอธิบายของแต่ละ request
+
+  `company` เคยอยู่ในรายการนี้ ตอนนี้แก้แล้ว — `branch_name` ถูกถอดออกจาก descriptor
+  เพราะไม่มีคอลัมน์นี้ใน `tb_company` จริง และความยาวของ field ทุก resource
+  ถูกปรับให้ตรงกับคอลัมน์แล้ว ค่าที่เคยผ่าน validation แล้วไปตายตอนบันทึกจึงไม่เหลือ
 variables:
   base_url: http://localhost:8089
   api: "{{base_url}}/api/v2"
