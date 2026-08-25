@@ -11,7 +11,7 @@ var Company = &crud.Resource{
 	Name:  "company",
 	Label: "บริษัท",
 	Source: `(SELECT autoID AS company_auto, company_id, company_code, name_th, name_en,
-	                 tax_id, branch_code, branch_name, address, province, zip_code,
+	                 tax_id, branch_code, address, province, zip_code,
 	                 phone, email, website, ` + audit + `
 	            FROM dbo.tb_company WHERE is_delete = 0) AS src`,
 	Table:         "tb_company",
@@ -29,13 +29,12 @@ var Company = &crud.Resource{
 		{Name: "name_en", Kind: schema.KindString, MaxLen: 200, Label: "ชื่อภาษาอังกฤษ"},
 		{Name: "tax_id", Kind: schema.KindString, MaxLen: 20, Label: "เลขประจำตัวผู้เสียภาษี"},
 		{Name: "branch_code", Kind: schema.KindString, MaxLen: 10, Label: "รหัสสาขา"},
-		{Name: "branch_name", Kind: schema.KindString, MaxLen: 100, Label: "ชื่อสาขา"},
-		{Name: "address", Kind: schema.KindString, MaxLen: 255, Label: "ที่อยู่"},
+		{Name: "address", Kind: schema.KindString, Label: "ที่อยู่"},
 		{Name: "province", Kind: schema.KindString, MaxLen: 100, Label: "จังหวัด"},
-		{Name: "zip_code", Kind: schema.KindString, MaxLen: 10, Label: "รหัสไปรษณีย์"},
-		{Name: "phone", Kind: schema.KindString, MaxLen: 30, Label: "โทรศัพท์"},
-		{Name: "email", Kind: schema.KindString, MaxLen: 150, Label: "อีเมล"},
-		{Name: "website", Kind: schema.KindString, MaxLen: 150, Label: "เว็บไซต์"},
+		{Name: "zip_code", Kind: schema.KindString, MaxLen: 20, Label: "รหัสไปรษณีย์"},
+		{Name: "phone", Kind: schema.KindString, MaxLen: 50, Label: "โทรศัพท์"},
+		{Name: "email", Kind: schema.KindString, MaxLen: 100, Label: "อีเมล"},
+		{Name: "website", Kind: schema.KindString, MaxLen: 100, Label: "เว็บไซต์"},
 	},
 }
 
