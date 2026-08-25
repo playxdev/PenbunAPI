@@ -26,6 +26,7 @@ penbun-api/
 ├── go.mod
 ├── .env.example
 ├── .gitignore
+├── .dockerignore                         กัน .env และ bin/ ไม่ให้เข้า build context
 ├── README.md
 ├── main.go                              ประกอบทุกชิ้นเข้าด้วยกัน + ปิดระบบอย่างเรียบร้อย
 │
@@ -37,6 +38,7 @@ penbun-api/
 │   ├── docker-compose.yml                MSSQL สำหรับพัฒนาบนเครื่อง
 │   └── sql/                              สคริปต์ schema ที่ผ่านการรีวิว
 ├── test/integration/                     เทสต์ฐานข้อมูลจริง (`-tags=integration`)
+│                                         การจองล็อกสต็อก · descriptor ตรงกับ schema
 │
 └── internal/                            Go บังคับเองว่า module ภายนอก import ไม่ได้
     │
@@ -134,6 +136,30 @@ make build
 
 สำหรับ integration test ให้เริ่มฐานข้อมูลด้วย `docker compose -f deploy/docker-compose.yml up -d`
 และตั้ง `PENBUN_INTEGRATION_DB_DSN` ก่อนรัน `make test-integration`.
+
+### การนำขึ้นใช้งาน
+
+รันบน DigitalOcean App Platform โดย build จาก `Dockerfile` ในราก ไม่ใช่ Go buildpack
+เพราะ image ต้องมี `ca-certificates` สำหรับต่อฐานข้อมูลแบบเข้ารหัส และ `tzdata`
+สำหรับแปลงวันที่ — buildpack ไม่ได้ให้มาทั้งคู่ ช่อง run command ต้องเว้นว่าง
+เพราะ `ENTRYPOINT` เรียก binary ให้อยู่แล้ว
+
+ตั้งค่าที่ต้องตรงกันสามจุด
+
+| ตั้งที่ | ค่า | เหตุผล |
+| :--- | :--- | :--- |
+| HTTP port ของ component | `8089` | App Platform ส่งค่านี้มาทาง `PORT` ซึ่ง config อ่านก่อน `FIBER_PORT` ถ้าปล่อยเป็น 8080 จะไม่ตรงกับ `EXPOSE` และ `HEALTHCHECK` ใน Dockerfile |
+| health check path | `/healthz` | ไม่ใช่ `/readyz` เพราะ `/readyz` ping ฐานข้อมูล ฐานล่มชั่วคราวจะกลายเป็นวนรีสตาร์ตที่ไม่ช่วยอะไร |
+| จำนวน instance | `1` | รายการ token ที่ถูกเพิกถอนอยู่ในหน่วยความจำของ process ดูข้อ 11 |
+
+ค่า env ที่ต้องตั้งบน App Platform เหมือน `.env.example` โดยทำ `DB_PASSWORD`
+กับ `JWT_SECRET` เป็นชนิดเข้ารหัส และตั้ง `APP_ENV=production` เพื่อไม่ให้
+ตารางเส้นทางถูกพิมพ์ลง log ตอนเริ่มทำงาน ส่วน `CORS_ORIGINS` ต้องเป็นโดเมนจริง
+ของ PenbunWeb ไม่ใช่ค่า localhost ที่ติดมาจาก `.env`
+
+> App Platform ต่อฐานข้อมูลผ่านอินเทอร์เน็ตสาธารณะ ไม่ได้อยู่ใน VPC เดียวกับ Droplet
+> และ IP ขาออกไม่คงที่ถ้าไม่ได้เปิด dedicated egress จึงตั้งกฎ firewall แคบ ๆ ไม่ได้
+> `DB_ENCRYPT=true` กับ `DB_TRUST_CERT=false` เป็นขั้นต่ำที่ต้องมี
 
 ---
 
@@ -354,6 +380,12 @@ var Supplier = &crud.Resource{
 7. โพสต์เกินสต็อก → `409 INSUFFICIENT_STOCK` และสต็อกต้องไม่ขยับเลย
 8. โพสต์ซ้ำ → `409 ALREADY_POSTED`
 9. สร้างยอดคงเหลือใหม่จากบัญชีการเคลื่อนไหว แล้วยอดต้องเท่าเดิมทุกแถว
+10. descriptor ทุกตัวตรงกับ `INFORMATION_SCHEMA` — คอลัมน์มีจริง และ `MaxLen` เท่ากับความยาวคอลัมน์
+
+ข้อ 10 อยู่ใน `test/integration/descriptor_drift_test.go` เขียนไว้เพราะ descriptor
+ที่หลุดจาก schema ไม่แสดงอาการตอนเริ่มทำงานและไม่แสดงตอนอ่าน มันโผล่ตอนมีคนกดบันทึกจริง
+`MaxLen` ที่กว้างกว่าคอลัมน์คือกรณีที่แย่ที่สุด เพราะผ่าน validation แล้วไปตายตอน `INSERT`
+กลายเป็น 500 ทั้งที่ผู้ใช้กรอกมาถูกตามที่ API บอก
 
 ---
 
@@ -361,7 +393,7 @@ var Supplier = &crud.Resource{
 
 | | |
 | :--- | :--- |
-| รายการ token ที่ถูกเพิกถอนเก็บในหน่วยความจำ | หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance รุ่นนี้จึงรองรับ instance เดียว มี `TokenStore` เป็น interface เตรียมไว้เปลี่ยนแล้ว |
+| รายการ token ที่ถูกเพิกถอนเก็บในหน่วยความจำ | หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance รุ่นนี้จึงรองรับ instance เดียว — ต้องตั้งจำนวน instance บน App Platform เป็น 1 ไม่งั้น logout จะเพิกถอนได้แค่ instance ที่รับคำขอนั้น token เดิมยังใช้ที่ instance อื่นได้ต่อ ด้วยเหตุผลเดียวกันนี้ AppLock ก็ไม่ทำงานข้าม instance มี `TokenStore` เป็น interface เตรียมไว้เปลี่ยนแล้ว |
 | ยังไม่มีกระบวนงานกลับรายการ | เอกสารที่โพสต์แล้วแก้ไม่ได้ ต้องให้ผู้ดูแลระบบใช้ `/stock/adjust` ไปก่อน |
 | 12 resource ยังไม่มี View รองรับ | `warehouse` `product-group` `route` `company` `discount` และตารางอ้างอิงอีก 7 ตัว ใช้ derived table และคอมเมนต์ `TEMP:` กำกับไว้ เปลี่ยนเป็นชื่อ View ได้ทันทีที่ฝั่งฐานข้อมูลเพิ่มให้ (PenbunSQL v8) |
 | การควบคุมสิทธิ์ยังหยาบ | มีแค่ระดับผู้ดูแลกับผู้ใช้ทั่วไป รอตารางบทบาทและสิทธิ์ |
