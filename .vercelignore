@@ -1,0 +1,7 @@
+Postman/
+docs/
+deploy/
+test/
+penbun-api/
+*.log
+coverage.out
