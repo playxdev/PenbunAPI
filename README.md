@@ -164,6 +164,28 @@ make build
 CORS_ORIGINS=https://penbunweb.pages.dev,http://localhost:4173
 ```
 
+**ตัวแปรระดับ component ทับระดับ app** บน App Platform ถ้า `CORS_ORIGINS` ถูก
+import เข้าไปที่ component ตอนสร้างแอปจาก `.env` การไปแก้ที่หน้า App-Level
+จะไม่มีผลใด ๆ และหน้าจอไม่ได้บอกว่าค่าไหนชนะ ต้องลบหรือแก้ที่ component
+
+ค่าที่ process ถืออยู่จริงอ่านได้จากบรรทัดแรกของ Runtime Logs
+
+```
+20260826-14:13:17 | INFO | server starting | addr=:8089 env=production version=4.0.0 cors_origins=[https://www.phenbun.com]
+```
+
+และถ้ามีคำขอจาก origin ที่ไม่อยู่ในรายการ จะได้บรรทัดเตือนหนึ่งบรรทัดต่อหนึ่ง
+origin ต่อการรันหนึ่งรอบ
+
+```
+20260826-14:13:18 | WARN | cors origin rejected | origin=https://www.phenbun.com method=GET path=/api/v2/receive-note allowed=[http://localhost:5173]
+```
+
+เขียนไว้เพราะการถูก CORS ปฏิเสธเป็นความล้มเหลวที่เงียบที่สุดในระบบ preflight
+ตอบ `204` เหมือนกันทั้ง origin ที่อนุญาตและไม่อนุญาต ต่างกันแค่มี header
+`Access-Control-Allow-Origin` หรือไม่ ส่วนเบราว์เซอร์บล็อกเองโดยไม่ส่งคำขอจริง
+ตามมา ใน access log จึงเห็นแค่ `OPTIONS` ลอย ๆ และไม่มีอะไรบอกว่าเกิดอะไรขึ้น
+
 อีกครึ่งหนึ่งของเรื่องนี้อยู่ฝั่ง PenbunWeb — `connect-src` ใน `public/_headers`
 ต้องมี origin ของ API ด้วย เบราว์เซอร์บล็อกที่ CSP ก่อนจะถาม CORS เสียอีก
 ตั้งถูกข้างเดียวยังยิงไม่ผ่าน

@@ -120,6 +120,8 @@ func buildApp(cfg *config.Config, lg *slog.Logger) *fiber.App {
 	app.Use(requestid.New(requestid.Config{Generator: shortID}))
 	app.Use(recover.New())
 	app.Use(mw.AccessLog())
+	// ต้องมาก่อน cors.New เพื่อให้เห็น origin ก่อนที่ middleware จะตัดสิน
+	app.Use(mw.CORSAudit(cfg.CORSOrigins, lg))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: cfg.CORSOrigins,
 		AllowMethods: []string{
@@ -150,7 +152,13 @@ func serve(app *fiber.App, cfg *config.Config, lg *slog.Logger) error {
 	// Listen ต้องอยู่ใน goroutine ไม่งั้นจะไม่มีใครรอสัญญาณปิดและ hook จะไม่ทำงาน
 	go func() {
 		addr := ":" + cfg.Port
-		lg.Info("server starting", "addr", addr, "env", cfg.AppEnv, "version", cfg.Version)
+		// พิมพ์รายการ CORS ที่ process นี้ถืออยู่จริง ไม่ใช่ที่ตั้งใจตั้งไว้
+		//
+		// บนแพลตฟอร์มที่ตัวแปรระดับ component ทับระดับ app ได้ หน้าจอตั้งค่า
+		// ไม่ได้บอกว่าค่าไหนชนะ บรรทัดนี้บอก และเป็นวิธีเดียวที่ตรวจได้จาก
+		// ภายนอกโดยไม่ต้องเปิด endpoint ที่คายค่า config ออกมา
+		lg.Info("server starting", "addr", addr, "env", cfg.AppEnv, "version", cfg.Version,
+			"cors_origins", cfg.CORSOrigins)
 		if err := app.Listen(addr, fiber.ListenConfig{
 			EnablePrintRoutes:     !cfg.IsProduction(),
 			DisableStartupMessage: cfg.IsProduction(),
