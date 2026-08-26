@@ -3,8 +3,10 @@
 The API assumes Microsoft SQL Server and relies on the following database
 behaviour. These are deployment prerequisites, not schema definitions.
 
-- Read models are exposed through the configured views or derived queries and
-  omit soft-deleted rows.
+- Read models are exposed through views — every resource and every document
+  since PenbunSQL v8 — and omit soft-deleted rows. No descriptor builds a
+  derived table any more, so a view that is missing or renamed answers
+  `Invalid object name` on the first request rather than degrading quietly.
 - Tables provide internal `autoID` values while public API references use the
   business IDs resolved by `repository.Resolver`.
 - Every table carries an `AFTER INSERT` trigger that fills the business ID, so
@@ -15,8 +17,12 @@ behaviour. These are deployment prerequisites, not schema definitions.
   a view in the same transaction. Dropping or disabling those triggers changes
   this contract and breaks business ID generation.
 - Stock mutations and document posting are performed through the database
-  routines expected by the domain repositories; the API adds application locks
-  before these calls.
+  routines expected by the domain repositories. Both sides take application
+  locks over the same key — `PENBUN:STOCK:<sku autoID>:<warehouse autoID>` —
+  the API before it calls in, and `USP_POST_*` for itself since v8. The
+  spelling has to match exactly or the two queue on different locks and
+  protect nothing. The API's locks stay because they are what makes the
+  concurrency test fail loudly when a new route forgets them.
 - Foreign-key, check, unique, and business-rule failures must retain enough SQL
   Server error detail for `platform/httpx` to map them to the public error
   envelope.
@@ -25,16 +31,23 @@ behaviour. These are deployment prerequisites, not schema definitions.
   resource, and a `MaxLen` wider than its column passes validation and then
   fails at `INSERT` as a truncation error, surfacing as a 500 on input the API
   advertised as valid. `test/integration/descriptor_drift_test.go` checks every
-  descriptor against `INFORMATION_SCHEMA`; run it after any schema change.
+  descriptor against `INFORMATION_SCHEMA`; run it after any schema change. It
+  covers `resources.All()`, both halves of every `document.Spec`, and the
+  hand-written `/book` handler — the last two were added after `doc_no`
+  carried `MaxLen` 50 against a 30-wide column and `translator` was accepted
+  for a column that had never existed.
 
 ## Proposals for database owners
 
 1. Version the production schema with reviewed migrations in `deploy/sql/` and
-   record the required schema version at application startup.
+   record the required schema version at application startup. Nothing checks it
+   today: an API built for v8 against a v7 database starts happily and fails on
+   the first read.
 2. Add supporting indexes for each view/filter/sort combination used by the
    resource descriptors, validating plans against production-sized data.
-3. Keep stock consistency inside the stock procedures as the final authority;
-   API application locks cannot protect direct database clients.
+3. Keep stock consistency inside the stock procedures as the final authority.
+   Done in v8 through `USP_LOCK_STOCK_KEY`; before that the API's locks left
+   anyone posting from SSMS or a scheduled job unprotected.
 4. Publish stable SQL error numbers (or a mapping table) for duplicate,
    reference-in-use, insufficient-stock, and business-rule violations.
 5. Announce column renames and length changes before they ship. The descriptors
