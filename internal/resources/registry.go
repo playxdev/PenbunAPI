@@ -16,6 +16,7 @@ func All() []*crud.Resource {
 		CustomerType,
 		VendorType,
 		DiscountType,
+		DiscountGroup,
 		ProductCategory,
 		ProductFormatType,
 		UnitType,
@@ -36,6 +37,9 @@ func All() []*crud.Resource {
 		Product,
 		ProductSKU,
 		Book, // อ่านอย่างเดียว — การเขียนอยู่ที่ domain/book
+
+		// ชั้นกฎราคา — อ้างทั้งกลุ่มส่วนลด ลูกค้า สาย และ SKU จึงอยู่ท้ายสุด
+		PriceRule,
 	}
 }
 

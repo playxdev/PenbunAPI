@@ -308,14 +308,14 @@ var Supplier = &crud.Resource{
 | กลุ่ม | เส้นทาง | จำนวน |
 | :--- | :--- | ---: |
 | การเข้าสู่ระบบ | `/auth/login` `/refresh` `/me` `/change-password` `/logout` · `/users/{id}/unlock` | 6 |
-| Master data | 18 resource × 5 | 90 |
+| Master data | 20 resource × 5 | 100 |
 | เอกสาร | `receive-note` `order` `return-note` `vendor-return-note` × 9 | 36 |
 | หนังสือ | `POST` `PUT` `DELETE /book` | 3 |
 | สต็อก | `onhand` `movements` `adjust` `transfer` `rebuild` | 5 |
 | ฝากขาย | `outstanding` `rebuild` | 2 |
 | การจัดสรร | `history` `pull` | 2 |
 | ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` | 4 |
-| | **รวม** | **148** |
+| | **รวม** | **158** |
 
 ---
 

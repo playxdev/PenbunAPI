@@ -46,6 +46,7 @@ var cacheable = map[string]bool{
 	"tb_book_type":           true,
 	"tb_warehouse":           true,
 	"tb_route":               true,
+	"tb_discount_group":      true,
 }
 
 // idColumn บอกว่าตารางไหนใช้คอลัมน์อะไรเป็น Business ID
@@ -56,6 +57,7 @@ var idColumn = map[string]string{
 	"tb_customer_type":       "customer_type_id",
 	"tb_vendor_type":         "vendor_type_id",
 	"tb_discount_type":       "discount_type_id",
+	"tb_discount_group":      "discount_group_id",
 	"tb_product_category":    "product_category_id",
 	"tb_product_format_type": "product_format_type_id",
 	"tb_unit_type":           "unit_type_id",

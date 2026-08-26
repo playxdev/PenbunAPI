@@ -79,11 +79,14 @@ var Customer = &crud.Resource{
 	Filters: []schema.Filter{
 		{Param: "customer_type_id", Column: "customer_type_id", Kind: schema.KindString},
 		{Param: "province", Column: "province", Kind: schema.KindString},
-		{Param: "discount_group", Column: "discount_group", Kind: schema.KindString},
+		{Param: "discount_group_id", Column: "discount_group_id", Kind: schema.KindString},
 	},
 	Refs: []schema.Ref{
 		{Field: "customer_type_id", Table: "tb_customer_type",
 			Column: "ref_customer_type_auto", Label: "ประเภทลูกค้า", Required: true},
+		// v9 : กลุ่มส่วนลดเคยเป็นข้อความอิสระที่ไม่มีอะไร resolve ให้ ตอนนี้เป็น FK จริง
+		{Field: "discount_group_id", Table: "tb_discount_group",
+			Column: "ref_discount_group_auto", Label: "กลุ่มส่วนลด"},
 	},
 	Fields: []schema.Field{
 		{Name: "customer_code", Kind: schema.KindString, MaxLen: 20, Label: "รหัสลูกค้า"},
@@ -106,7 +109,6 @@ var Customer = &crud.Resource{
 		{Name: "credit_term_day", Kind: schema.KindInt, Label: "เครดิต (วัน)"},
 		{Name: "is_vat", Kind: schema.KindBool, Label: "จด VAT"},
 		{Name: "invoice_format", Kind: schema.KindString, MaxLen: 20, Label: "รูปแบบใบกำกับ"},
-		{Name: "discount_group", Kind: schema.KindString, MaxLen: 20, Label: "กลุ่มส่วนลด"},
 		{Name: "note", Kind: schema.KindString, MaxLen: 500, Label: "หมายเหตุ"},
 	},
 }
