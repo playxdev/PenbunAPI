@@ -10,18 +10,10 @@ import (
 // ตรวจฝั่ง API ด้วยเพื่อให้ผู้ใช้ได้ข้อความที่อ่านรู้เรื่องกว่าข้อความ CHECK constraint
 var warehouseTypes = []string{"DC", "BRANCH", "RETURN", "DAMAGED", "PROVINCE", "INTERNATIONAL"}
 
-// TEMP: รอ vw_warehouse ของ DB v7.1
 var Warehouse = &crud.Resource{
-	Name:  "warehouse",
-	Label: "คลังสินค้า",
-	Source: `(SELECT w.autoID AS warehouse_auto, w.warehouse_id, w.warehouse_code, w.warehouse_name,
-	                 w.warehouse_type, w.is_main_dc, w.allow_negative_stock,
-	                 w.address, w.province, w.description,
-	                 co.company_id, co.name_th AS company_name,
-	                 w.is_active, w.id_status, w.update_by, w.update_date
-	            FROM dbo.tb_warehouse w
-	            LEFT JOIN dbo.tb_company co ON co.autoID = w.ref_company_auto
-	           WHERE w.is_delete = 0) AS src`,
+	Name:          "warehouse",
+	Label:         "คลังสินค้า",
+	Source:        "dbo.vw_warehouse",
 	Table:         "tb_warehouse",
 	IDColumn:      "warehouse_id",
 	AutoColumn:    "warehouse_auto",
@@ -49,17 +41,10 @@ var Warehouse = &crud.Resource{
 	},
 }
 
-// TEMP: รอ vw_product_group ของ DB v7.1
 var ProductGroup = &crud.Resource{
-	Name:  "product-group",
-	Label: "กลุ่มสินค้า",
-	Source: `(SELECT g.autoID AS product_group_auto, g.product_group_id, g.product_group_name,
-	                 g.description,
-	                 pc.product_category_id, pc.category_code, pc.category_name,
-	                 g.is_active, g.id_status, g.update_by, g.update_date
-	            FROM dbo.tb_product_group g
-	            INNER JOIN dbo.tb_product_category pc ON pc.autoID = g.ref_product_category_auto
-	           WHERE g.is_delete = 0) AS src`,
+	Name:          "product-group",
+	Label:         "กลุ่มสินค้า",
+	Source:        "dbo.vw_product_group",
 	Table:         "tb_product_group",
 	IDColumn:      "product_group_id",
 	AutoColumn:    "product_group_auto",
@@ -178,17 +163,10 @@ var Vendor = &crud.Resource{
 	},
 }
 
-// TEMP: รอ vw_route ของ DB v7.1
 var Route = &crud.Resource{
-	Name:  "route",
-	Label: "สายจัดจำหน่าย",
-	Source: `(SELECT r.autoID AS route_auto, r.route_id, r.route_code, r.route_name,
-	                 r.route_type, r.region_name, r.sort_order, r.description,
-	                 w.warehouse_id, w.warehouse_code,
-	                 r.is_active, r.id_status, r.update_by, r.update_date
-	            FROM dbo.tb_route r
-	            LEFT JOIN dbo.tb_warehouse w ON w.autoID = r.ref_warehouse_auto
-	           WHERE r.is_delete = 0) AS src`,
+	Name:          "route",
+	Label:         "สายจัดจำหน่าย",
+	Source:        "dbo.vw_route",
 	Table:         "tb_route",
 	IDColumn:      "route_id",
 	AutoColumn:    "route_auto",
@@ -216,14 +194,16 @@ var Route = &crud.Resource{
 }
 
 var CustomerRoute = &crud.Resource{
-	Name:        "customer-route",
-	Label:       "การผูกลูกค้ากับสาย",
-	Source:      "dbo.vw_customer_route",
-	Table:       "tb_customer_route",
-	IDColumn:    "customer_route_id",
-	AutoColumn:  "customer_route_auto",
-	SortColumns: map[string]string{"seq": "delivery_seq", "route": "route_code"},
-	DefaultSort: "route",
+	Name:       "customer-route",
+	Label:      "การผูกลูกค้ากับสาย",
+	Source:     "dbo.vw_customer_route",
+	Table:      "tb_customer_route",
+	IDColumn:   "customer_route_id",
+	AutoColumn: "customer_route_auto",
+	// v8 ทำให้ค้นหาได้จริง — v7 ไม่มี SearchColumns เลย ?q= จึงถูกละเลยเงียบ ๆ
+	SearchColumns: []string{"customer_name", "route_code", "route_name"},
+	SortColumns:   map[string]string{"seq": "delivery_seq", "route": "route_code"},
+	DefaultSort:   "route",
 	Filters: []schema.Filter{
 		{Param: "customer_id", Column: "customer_id", Kind: schema.KindString},
 		{Param: "route_code", Column: "route_code", Kind: schema.KindString},

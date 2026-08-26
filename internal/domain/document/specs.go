@@ -42,28 +42,9 @@ var ReceiveNote = &Spec{
 	HeaderTable: "tb_receive_note",
 	ItemTable:   "tb_receive_item",
 
-	// TEMP: ยังไม่มี View รองรับเอกสารชุดนี้ ใช้ derived table ไปก่อน
-	HeaderSource: `(SELECT h.autoID AS receive_note_auto, h.receive_note_id, h.doc_no, h.doc_date,
-	                       h.doc_status, h.trade_type, h.vendor_doc_no,
-	                       h.total_qty, h.total_amount, h.remark,
-	                       v.vendor_id, v.vendor_name,
-	                       w.warehouse_id, w.warehouse_code, w.warehouse_name,
-	                       h.is_active, h.id_status, h.update_by, h.update_date
-	                  FROM dbo.tb_receive_note h
-	                  INNER JOIN dbo.tb_vendor    v ON v.autoID = h.ref_vendor_auto
-	                  INNER JOIN dbo.tb_warehouse w ON w.autoID = h.ref_warehouse_auto
-	                 WHERE h.is_delete = 0) AS src`,
+	HeaderSource: "dbo.vw_receive_note",
 
-	ItemSource: `(SELECT i.autoID AS receive_item_auto, h.receive_note_id, i.line_no,
-	                     s.sku_id, s.sku_code, s.issue_no,
-	                     p.product_id, p.product_name,
-	                     i.qty, i.unit_cost, i.cover_price, i.amount, i.remark,
-	                     i.update_by, i.update_date
-	                FROM dbo.tb_receive_item i
-	                INNER JOIN dbo.tb_receive_note h ON h.autoID = i.ref_receive_note_auto
-	                INNER JOIN dbo.tb_product_sku  s ON s.autoID = i.ref_sku_auto
-	                INNER JOIN dbo.tb_product      p ON p.autoID = s.ref_product_auto
-	               WHERE i.is_delete = 0) AS src`,
+	ItemSource: "dbo.vw_receive_item",
 
 	IDColumn:     "receive_note_id",
 	AutoColumn:   "receive_note_auto",
@@ -239,27 +220,9 @@ var ReturnNote = &Spec{
 	HeaderTable: "tb_return_note",
 	ItemTable:   "tb_return_item",
 
-	// TEMP: ยังไม่มี View รองรับเอกสารชุดนี้
-	HeaderSource: `(SELECT h.autoID AS return_note_auto, h.return_note_id, h.doc_no, h.doc_date,
-	                       h.doc_status, h.period_key, h.total_qty, h.total_amount, h.remark,
-	                       c.customer_id, c.customer_name,
-	                       o.order_id AS ref_order_id,
-	                       h.is_active, h.id_status, h.update_by, h.update_date
-	                  FROM dbo.tb_return_note h
-	                  INNER JOIN dbo.tb_customer c ON c.autoID = h.ref_customer_auto
-	                  LEFT  JOIN dbo.tb_order    o ON o.autoID = h.ref_order_auto
-	                 WHERE h.is_delete = 0) AS src`,
+	HeaderSource: "dbo.vw_return_note",
 
-	ItemSource: `(SELECT i.autoID AS return_item_auto, h.return_note_id, i.line_no,
-	                     s.sku_id, s.sku_code, s.issue_no,
-	                     p.product_id, p.product_name,
-	                     i.qty_returned, i.unit_price, i.cover_price, i.amount,
-	                     i.condition_status, i.remark, i.update_by, i.update_date
-	                FROM dbo.tb_return_item i
-	                INNER JOIN dbo.tb_return_note h ON h.autoID = i.ref_return_note_auto
-	                INNER JOIN dbo.tb_product_sku s ON s.autoID = i.ref_sku_auto
-	                INNER JOIN dbo.tb_product     p ON p.autoID = s.ref_product_auto
-	               WHERE i.is_delete = 0) AS src`,
+	ItemSource: "dbo.vw_return_item",
 
 	IDColumn:     "return_note_id",
 	AutoColumn:   "return_note_auto",
@@ -342,28 +305,9 @@ var VendorReturnNote = &Spec{
 	HeaderTable: "tb_vendor_return_note",
 	ItemTable:   "tb_vendor_return_item",
 
-	// TEMP: ยังไม่มี View รองรับเอกสารชุดนี้
-	HeaderSource: `(SELECT h.autoID AS vendor_return_note_auto, h.vendor_return_note_id,
-	                       h.doc_no, h.doc_date, h.doc_status,
-	                       h.total_qty, h.total_amount, h.remark,
-	                       v.vendor_id, v.vendor_name,
-	                       w.warehouse_id, w.warehouse_code, w.warehouse_name,
-	                       h.is_active, h.id_status, h.update_by, h.update_date
-	                  FROM dbo.tb_vendor_return_note h
-	                  INNER JOIN dbo.tb_vendor    v ON v.autoID = h.ref_vendor_auto
-	                  INNER JOIN dbo.tb_warehouse w ON w.autoID = h.ref_warehouse_auto
-	                 WHERE h.is_delete = 0) AS src`,
+	HeaderSource: "dbo.vw_vendor_return_note",
 
-	ItemSource: `(SELECT i.autoID AS vendor_return_item_auto, h.vendor_return_note_id, i.line_no,
-	                     s.sku_id, s.sku_code, s.issue_no,
-	                     p.product_id, p.product_name,
-	                     i.qty_returned, i.unit_cost, i.amount, i.remark,
-	                     i.update_by, i.update_date
-	                FROM dbo.tb_vendor_return_item i
-	                INNER JOIN dbo.tb_vendor_return_note h ON h.autoID = i.ref_vendor_return_note_auto
-	                INNER JOIN dbo.tb_product_sku       s ON s.autoID = i.ref_sku_auto
-	                INNER JOIN dbo.tb_product           p ON p.autoID = s.ref_product_auto
-	               WHERE i.is_delete = 0) AS src`,
+	ItemSource: "dbo.vw_vendor_return_item",
 
 	IDColumn:     "vendor_return_note_id",
 	AutoColumn:   "vendor_return_note_auto",

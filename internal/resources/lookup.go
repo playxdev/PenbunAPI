@@ -9,20 +9,14 @@ import (
 // ─────────────────────────────────────────────────────────────────────────────
 // Layer 1 : Lookup
 //
-// TEMP: PenbunSQL v7 ยังไม่มี View ให้ตารางกลุ่มนี้ จึงใช้ derived table แทน
-// เมื่อ DB v7.1 เพิ่ม vw_* ครบแล้ว ให้เปลี่ยน Source เป็นชื่อ View ตรง ๆ
-// แล้วลบ subselect ทิ้ง — ไม่ต้องแตะส่วนอื่นของ descriptor เลย
+// อ่านผ่าน View ของ PenbunSQL v8 ทุกตัว  นิยามของสิ่งที่ resource คืนจึงอยู่ที่
+// เดียวกับตาราง ไม่ใช่ในสตริงกลางไฟล์ Go ที่ไม่มีใครเห็นตอนแก้ schema
 // ─────────────────────────────────────────────────────────────────────────────
 
-// audit คือคอลัมน์มาตรฐานที่ทุกตารางมีเหมือนกัน ใส่ท้าย SELECT ของ derived table
-const audit = "is_active, id_status, update_by, update_date"
-
 var CustomerType = &crud.Resource{
-	Name:  "customer-type",
-	Label: "ประเภทลูกค้า",
-	Source: `(SELECT autoID AS customer_type_auto, customer_type_id, type_name, description,
-	                 base_credit_day, ` + audit + `
-	            FROM dbo.tb_customer_type WHERE is_delete = 0) AS src`,
+	Name:          "customer-type",
+	Label:         "ประเภทลูกค้า",
+	Source:        "dbo.vw_customer_type",
 	Table:         "tb_customer_type",
 	IDColumn:      "customer_type_id",
 	AutoColumn:    "customer_type_auto",
@@ -40,10 +34,9 @@ var CustomerType = &crud.Resource{
 }
 
 var VendorType = &crud.Resource{
-	Name:  "vendor-type",
-	Label: "ประเภทคู่ค้า",
-	Source: `(SELECT autoID AS vendor_type_auto, vendor_type_id, type_name, description, ` + audit + `
-	            FROM dbo.tb_vendor_type WHERE is_delete = 0) AS src`,
+	Name:          "vendor-type",
+	Label:         "ประเภทคู่ค้า",
+	Source:        "dbo.vw_vendor_type",
 	Table:         "tb_vendor_type",
 	IDColumn:      "vendor_type_id",
 	AutoColumn:    "vendor_type_auto",
@@ -57,10 +50,9 @@ var VendorType = &crud.Resource{
 }
 
 var UnitType = &crud.Resource{
-	Name:  "unit-type",
-	Label: "หน่วยนับ",
-	Source: `(SELECT autoID AS unit_type_auto, unit_type_id, unit_type_name, description, ` + audit + `
-	            FROM dbo.tb_unit_type WHERE is_delete = 0) AS src`,
+	Name:          "unit-type",
+	Label:         "หน่วยนับ",
+	Source:        "dbo.vw_unit_type",
 	Table:         "tb_unit_type",
 	IDColumn:      "unit_type_id",
 	AutoColumn:    "unit_type_auto",
@@ -74,10 +66,9 @@ var UnitType = &crud.Resource{
 }
 
 var BookType = &crud.Resource{
-	Name:  "book-type",
-	Label: "ประเภทหนังสือ",
-	Source: `(SELECT autoID AS book_type_auto, book_type_id, type_name, description, ` + audit + `
-	            FROM dbo.tb_book_type WHERE is_delete = 0) AS src`,
+	Name:          "book-type",
+	Label:         "ประเภทหนังสือ",
+	Source:        "dbo.vw_book_type",
 	Table:         "tb_book_type",
 	IDColumn:      "book_type_id",
 	AutoColumn:    "book_type_auto",
@@ -91,11 +82,9 @@ var BookType = &crud.Resource{
 }
 
 var ProductCategory = &crud.Resource{
-	Name:  "product-category",
-	Label: "หมวดสินค้า",
-	Source: `(SELECT autoID AS product_category_auto, product_category_id, category_code,
-	                 category_name, description, ` + audit + `
-	            FROM dbo.tb_product_category WHERE is_delete = 0) AS src`,
+	Name:          "product-category",
+	Label:         "หมวดสินค้า",
+	Source:        "dbo.vw_product_category",
 	Table:         "tb_product_category",
 	IDColumn:      "product_category_id",
 	AutoColumn:    "product_category_auto",
@@ -110,11 +99,9 @@ var ProductCategory = &crud.Resource{
 }
 
 var ProductFormatType = &crud.Resource{
-	Name:  "product-format-type",
-	Label: "รูปแบบสินค้า",
-	Source: `(SELECT autoID AS product_format_type_auto, product_format_type_id, format_name,
-	                 description, ` + audit + `
-	            FROM dbo.tb_product_format_type WHERE is_delete = 0) AS src`,
+	Name:          "product-format-type",
+	Label:         "รูปแบบสินค้า",
+	Source:        "dbo.vw_product_format_type",
 	Table:         "tb_product_format_type",
 	IDColumn:      "product_format_type_id",
 	AutoColumn:    "product_format_type_auto",
@@ -128,11 +115,9 @@ var ProductFormatType = &crud.Resource{
 }
 
 var DiscountType = &crud.Resource{
-	Name:  "discount-type",
-	Label: "ประเภทส่วนลด",
-	Source: `(SELECT autoID AS discount_type_auto, discount_type_id, discount_type_name,
-	                 description, ` + audit + `
-	            FROM dbo.tb_discount_type WHERE is_delete = 0) AS src`,
+	Name:          "discount-type",
+	Label:         "ประเภทส่วนลด",
+	Source:        "dbo.vw_discount_type",
 	Table:         "tb_discount_type",
 	IDColumn:      "discount_type_id",
 	AutoColumn:    "discount_type_auto",

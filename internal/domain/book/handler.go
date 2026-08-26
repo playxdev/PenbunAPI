@@ -75,9 +75,24 @@ var bookFields = []schema.Field{
 		Label: "ส่วนลดจากคู่ค้า (%)", Min: schema.Float64(0)},
 	{Name: "customer_discount_percent", Kind: schema.KindDecimal,
 		Label: "ส่วนลดให้ลูกค้า (%)", Min: schema.Float64(0)},
+	// อภินันท์ — จำนวนเล่มที่ให้เปล่า ทั้งใบชำระเจ้าของหนังสือและใบรับเงิน
+	// ล่วงหน้าอ่านค่านี้จากแฟ้มหนังสือ ไม่ได้กรอกซ้ำในเอกสาร
+	{Name: "complimentary_qty", Kind: schema.KindInt, Label: "อภินันท์ (เล่ม)", Min: schema.Float64(0)},
 	{Name: "effective_date", Kind: schema.KindDate, Label: "วันที่มีผล"},
 	{Name: "book_description", Column: "description", Kind: schema.KindString,
 		MaxLen: 500, Label: "รายละเอียดหนังสือ"},
+}
+
+// FieldSets คืนคอลัมน์ที่ endpoint นี้เขียนจริง แยกตามตาราง
+//
+// มีไว้ให้เทสต์ drift เทียบกับ INFORMATION_SCHEMA ได้ — /book เป็น handler ที่
+// เขียนเอง ไม่ได้อยู่ใน resources.All() ฟิลด์ของมันจึงไม่เคยถูกตรวจกับฐานจริง
+// และนั่นคือที่มาของ translator ที่รับมาตั้งแต่ v4.0.0 โดยไม่มีคอลัมน์รองรับ
+func FieldSets() map[string][]schema.Field {
+	return map[string][]schema.Field{
+		"tb_product": productFields,
+		"tb_book":    bookFields,
+	}
 }
 
 var bookRefs = []schema.Ref{

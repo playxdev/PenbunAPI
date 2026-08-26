@@ -6,14 +6,10 @@ import (
 	"penbun/api/internal/schema"
 )
 
-// TEMP: ยังไม่มี View รองรับ ใช้ derived table ไปก่อน
 var Company = &crud.Resource{
-	Name:  "company",
-	Label: "บริษัท",
-	Source: `(SELECT autoID AS company_auto, company_id, company_code, name_th, name_en,
-	                 tax_id, branch_code, address, province, zip_code,
-	                 phone, email, website, ` + audit + `
-	            FROM dbo.tb_company WHERE is_delete = 0) AS src`,
+	Name:          "company",
+	Label:         "บริษัท",
+	Source:        "dbo.vw_company",
 	Table:         "tb_company",
 	IDColumn:      "company_id",
 	AutoColumn:    "company_auto",
@@ -38,18 +34,10 @@ var Company = &crud.Resource{
 	},
 }
 
-// TEMP: ยังไม่มี View รองรับ ใช้ derived table ไปก่อน
 var Discount = &crud.Resource{
-	Name:  "discount",
-	Label: "ส่วนลด",
-	Source: `(SELECT d.autoID AS discount_auto, d.discount_id, d.discount_code, d.discount_name,
-	                 d.discount_value, d.is_percent, d.min_order_amount,
-	                 d.start_date, d.end_date, d.description,
-	                 dt.discount_type_id, dt.discount_type_name,
-	                 d.is_active, d.id_status, d.update_by, d.update_date
-	            FROM dbo.tb_discount d
-	            INNER JOIN dbo.tb_discount_type dt ON dt.autoID = d.ref_discount_type_auto
-	           WHERE d.is_delete = 0) AS src`,
+	Name:          "discount",
+	Label:         "ส่วนลด",
+	Source:        "dbo.vw_discount",
 	Table:         "tb_discount",
 	IDColumn:      "discount_id",
 	AutoColumn:    "discount_auto",
