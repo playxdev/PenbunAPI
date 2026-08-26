@@ -436,7 +436,7 @@ var Supplier = &crud.Resource{
 | :--- | :--- |
 | รายการ token ที่ถูกเพิกถอนเก็บในหน่วยความจำ | หายเมื่อรีสตาร์ต และไม่ทำงานข้าม instance รุ่นนี้จึงรองรับ instance เดียว — ต้องตั้งจำนวน instance บน App Platform เป็น 1 ไม่งั้น logout จะเพิกถอนได้แค่ instance ที่รับคำขอนั้น token เดิมยังใช้ที่ instance อื่นได้ต่อ ด้วยเหตุผลเดียวกันนี้ AppLock ก็ไม่ทำงานข้าม instance มี `TokenStore` เป็น interface เตรียมไว้เปลี่ยนแล้ว |
 | ยังไม่มีกระบวนงานกลับรายการ | เอกสารที่โพสต์แล้วแก้ไม่ได้ ต้องให้ผู้ดูแลระบบใช้ `/stock/adjust` ไปก่อน |
-| ต้องใช้ PenbunSQL v8 ขึ้นไป | ทุก resource และทุกเอกสารอ่านผ่าน View แล้ว ไม่มี derived table เหลือในโค้ด รันกับ v7 จะได้ `Invalid object name 'dbo.vw_...'` ตั้งแต่คำขอแรก |
+| ต้องใช้ PenbunSQL v10 ขึ้นไป | ทุก resource และทุกเอกสารอ่านผ่าน View ตั้งแต่ v8 รันกับ v7 จะได้ `Invalid object name 'dbo.vw_...'` ตั้งแต่คำขอแรก · ตั้งแต่รุ่นนี้ descriptor ของ `company` และ `warehouse` เขียน `sub_district` / `district` / `zip_code` ซึ่งเป็นคอลัมน์ที่ v10 เพิ่มให้ `tb_warehouse` และเป็นคอลัมน์ที่ `vw_company` เพิ่งคืนมา รันกับ v9 สองหน้านี้จะพังที่ `Invalid column name` ส่วน resource อื่นยังทำงานปกติ |
 | การควบคุมสิทธิ์ยังหยาบ | มีแค่ระดับผู้ดูแลกับผู้ใช้ทั่วไป รอตารางบทบาทและสิทธิ์ |
 | รายการเอกสารใหญ่มากอาจช้า | กระบวนงานที่โพสต์เอกสารทำงานทีละรายการ ปรับได้ที่ฝั่งฐานข้อมูลเท่านั้น |
 
@@ -447,7 +447,7 @@ var Supplier = &crud.Resource{
 | ไฟล์ | เนื้อหา |
 | :--- | :--- |
 | `docs/DATABASE-CONTRACT.md` | สิ่งที่ API พึ่งพาจากฐานข้อมูล และข้อเสนอถึงผู้ดูแล schema |
-| `../PenbunSQL/README.md` | schema v8.0.0 · View · Stored Procedure · สมมติฐานทางธุรกิจ |
+| `../PenbunSQL/README.md` | schema v10 · View · Stored Procedure · สมมติฐานทางธุรกิจ |
 | `../PenbunSQL/SQL-STANDARD.md` | กฎการตั้งชื่อ · audit column · กฎของ trigger |
 | `../PenbunWeb/README.md` | หน้าจอที่เรียก API นี้ และเครื่องยนต์ master data ฝั่งหน้าเว็บ |
 | `../PENBUN-TODO.md` | งานที่เหลือของทั้งระบบ และตารางจุดที่สัญญายังไม่ตรงกัน |

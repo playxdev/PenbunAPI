@@ -26,6 +26,8 @@ var Company = &crud.Resource{
 		{Name: "tax_id", Kind: schema.KindString, MaxLen: 20, Label: "เลขประจำตัวผู้เสียภาษี"},
 		{Name: "branch_code", Kind: schema.KindString, MaxLen: 10, Label: "รหัสสาขา"},
 		{Name: "address", Kind: schema.KindString, Label: "ที่อยู่"},
+		{Name: "sub_district", Kind: schema.KindString, MaxLen: 100, Label: "ตำบล/แขวง"},
+		{Name: "district", Kind: schema.KindString, MaxLen: 100, Label: "อำเภอ/เขต"},
 		{Name: "province", Kind: schema.KindString, MaxLen: 100, Label: "จังหวัด"},
 		{Name: "zip_code", Kind: schema.KindString, MaxLen: 20, Label: "รหัสไปรษณีย์"},
 		{Name: "phone", Kind: schema.KindString, MaxLen: 50, Label: "โทรศัพท์"},

@@ -36,7 +36,10 @@ var Warehouse = &crud.Resource{
 		{Name: "is_main_dc", Kind: schema.KindBool, Label: "เป็นคลังหลัก"},
 		{Name: "allow_negative_stock", Kind: schema.KindBool, Label: "อนุญาตให้สต็อกติดลบ"},
 		{Name: "address", Kind: schema.KindString, MaxLen: 255, Label: "ที่อยู่"},
+		{Name: "sub_district", Kind: schema.KindString, MaxLen: 100, Label: "ตำบล/แขวง"},
+		{Name: "district", Kind: schema.KindString, MaxLen: 100, Label: "อำเภอ/เขต"},
 		{Name: "province", Kind: schema.KindString, MaxLen: 100, Label: "จังหวัด"},
+		{Name: "zip_code", Kind: schema.KindString, MaxLen: 20, Label: "รหัสไปรษณีย์"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
 }
