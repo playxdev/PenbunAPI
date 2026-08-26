@@ -161,8 +161,16 @@ make build
 เพราะ API ใช้ bearer token
 
 ```
-CORS_ORIGINS=https://penbunweb.pages.dev,http://localhost:4173
+CORS_ORIGINS=https://www.phenbun.com,https://phenbun.com,https://penbunweb-1kq.pages.dev,http://localhost:4173
 ```
+
+โดเมน `.pages.dev` มีไว้เพื่อข้าม zone ของ Cloudflare ตอนไล่ปัญหา — มันคือ
+deployment เดียวกันแต่ไม่มี zone คั่น จึงแยกได้ว่าอาการมาจากแอปหรือจากการตั้งค่า
+zone ส่วน preview deployment ของ Pages ได้ subdomain สุ่มทุกครั้งและ CORS
+ไม่รองรับ wildcard จึงยิง API ตัวจริงไม่ได้ ซึ่งตั้งใจให้เป็นแบบนั้น
+
+ตั้งตัวแปรทั้งหมดไว้ **ที่เดียว** คือระดับ component เพราะปุ่ม *Add from .env*
+เขียนลง component เสมอ การมีบางตัวที่ app-level ด้วยคือที่มาของหัวข้อถัดไป
 
 **ตัวแปรระดับ component ทับระดับ app** บน App Platform ถ้า `CORS_ORIGINS` ถูก
 import เข้าไปที่ component ตอนสร้างแอปจาก `.env` การไปแก้ที่หน้า App-Level
