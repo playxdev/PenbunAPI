@@ -27,6 +27,7 @@ import (
 	"penbun/api/internal/domain/document"
 	"penbun/api/internal/domain/meta"
 	"penbun/api/internal/domain/stock"
+	"penbun/api/internal/domain/user"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/logx"
 	"penbun/api/internal/platform/mw"
@@ -97,6 +98,7 @@ func run() error {
 	}
 
 	book.NewHandler(db, resolver, crudEngine).Register(api)
+	user.NewHandler(db, resolver, crudEngine, cfg).Register(api)
 	stock.NewHandler(stock.NewRepo(db), db, resolver, cfg).Register(api)
 	allocation.NewHandler(db, resolver).Register(api)
 	meta.NewHandler(db).Register(api)

@@ -8,10 +8,18 @@ behaviour. These are deployment prerequisites, not schema definitions.
   derived table any more, so a view that is missing or renamed answers
   `Invalid object name` on the first request rather than degrading quietly.
 - `vw_users` (PenbunSQL v11) must not select `user_password` or
-  `counting_password_fail`. The `user` resource is mounted through the generic
+  `counting_password_fail`. The `users` resource is mounted through the generic
   CRUD engine, whose list query is `SELECT *` over the view, so anything the
   view returns is returned to every ADMIN who lists users. `domain/auth` reads
-  `tb_users` directly because it needs the hash the view withholds.
+  `tb_users` directly because it needs the hash the view withholds, and
+  `domain/user` reads the view back after `POST /users` for the same reason it
+  exists — the created row must be echoed without its own password.
+- `tb_users.status_change_pw` must keep its `DEFAULT 1`. `POST /users` never
+  sends the column, so the default is the only thing forcing a password the
+  administrator chose to be replaced at first sign-in.
+- `UQ_tb_users_user_name` is what rejects a duplicate username. The API does no
+  pre-check: two administrators creating the same name concurrently would both
+  pass one.
 - Tables provide internal `autoID` values while public API references use the
   business IDs resolved by `repository.Resolver`.
 - Every table carries an `AFTER INSERT` trigger that fills the business ID, so

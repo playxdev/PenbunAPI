@@ -1,6 +1,6 @@
 $kind: http-request
 description: 200 · envelope data = {items, page, limit, total, total_pages} · 403 FORBIDDEN ถ้าไม่ใช่ ADMIN
-url: "{{api}}/user?page=1&limit=50"
+url: "{{api}}/users?page=1&limit=50"
 method: GET
 queryParams:
   - key: page

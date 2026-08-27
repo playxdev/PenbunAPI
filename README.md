@@ -80,7 +80,7 @@ penbun-api/
     │   ├── lookup.go                    ตารางอ้างอิง 7 ตัว
     │   ├── master.go                    คลัง · กลุ่มสินค้า · คู่ค้า · ลูกค้า · สาย
     │   ├── product.go                   สินค้า · SKU · หนังสือ
-    │   ├── user.go                      ผู้ใช้งาน — อ่านอย่างเดียว เฉพาะ ADMIN
+    │   ├── user.go                      ผู้ใช้งาน — GET เท่านั้น เฉพาะ ADMIN
     │   └── registry_test.go
     │
     └── domain/                          ── ส่วนที่มีตรรกะเฉพาะ
@@ -96,6 +96,8 @@ penbun-api/
         │   └── handler.go
         ├── book/
         │   └── handler.go               เขียนสองตารางในทรานแซกชันเดียว
+        ├── user/
+        │   └── handler.go               สร้างผู้ใช้ — bcrypt + ตรวจ user_level
         ├── stock/
         │   ├── repo.go                  ทางเดียวที่โค้ดแตะสต็อกได้
         │   └── handler.go               คงเหลือ · เคลื่อนไหว · ปรับ · โอน · สร้างใหม่
@@ -307,9 +309,13 @@ RequireLevel: []string{"ADMIN"},
 `resources` ยังห้าม import `fiber` เหมือนเดิม descriptor จึงถือแค่ชื่อระดับสิทธิ์
 เป็นข้อความ ส่วน `crud.Engine.Mount` เป็นฝ่ายแปลงเป็น `mw.RequireLevel` ตอนติดตั้ง
 
-`user` เป็น resource เดียวที่ใช้ทั้งสองอย่างพร้อมกัน การสร้างและแก้ผู้ใช้ผ่าน generic
-engine จะเปิดทางให้เขียน `user_password` กับ `user_level` ตรง ๆ ซึ่งต้องผ่าน bcrypt
-และต้องมีกติกากันคนลบสิทธิ์ ADMIN คนสุดท้ายทิ้ง — งานนั้นเป็นของ domain แยกต่างหาก
+`users` เป็น resource เดียวที่ใช้ทั้งสองอย่างพร้อมกัน `ReadOnly` ปิดเส้นทางเขียนของ
+engine กลางไว้เพราะ `user_password` ต้องผ่าน bcrypt และ `user_level` เป็นคอลัมน์ที่
+ตัดสินสิทธิ์ของทั้ง API — เปิดให้ descriptor เขียนได้เมื่อไหร่ คนที่แก้ผู้ใช้ได้ก็ยกสิทธิ์
+ตัวเองเป็น ADMIN ได้เมื่อนั้น `POST /users` จึงอยู่ที่ `domain/user` แทน
+
+ชื่อ resource เป็นพหูพจน์ตัวเดียวในระบบ เพราะ `PUT /users/{id}/unlock` มีอยู่ก่อนแล้ว
+ตั้งแต่ v4.0.0 การตั้งเป็น `user` จะได้ทั้ง `/user` และ `/users` อยู่พร้อมกัน
 
 ### เพิ่มเอกสารชนิดใหม่
 
@@ -327,14 +333,14 @@ engine จะเปิดทางให้เขียน `user_password` ก�
 | :--- | :--- | ---: |
 | การเข้าสู่ระบบ | `/auth/login` `/refresh` `/me` `/change-password` `/logout` · `/users/{id}/unlock` | 6 |
 | Master data | 20 resource × 5 | 100 |
-| ผู้ใช้งาน | `GET /user` `GET /user/{id}` — `RequireLevel: ADMIN` | 2 |
+| ผู้ใช้งาน | `GET /users` `GET /users/{id}` `POST /users` — ADMIN เท่านั้น | 3 |
 | เอกสาร | `receive-note` `order` `return-note` `vendor-return-note` × 9 | 36 |
 | หนังสือ | `POST` `PUT` `DELETE /book` | 3 |
 | สต็อก | `onhand` `movements` `adjust` `transfer` `rebuild` | 5 |
 | ฝากขาย | `outstanding` `rebuild` | 2 |
 | การจัดสรร | `history` `pull` | 2 |
 | ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` | 4 |
-| | **รวม** | **160** |
+| | **รวม** | **161** |
 
 ---
 

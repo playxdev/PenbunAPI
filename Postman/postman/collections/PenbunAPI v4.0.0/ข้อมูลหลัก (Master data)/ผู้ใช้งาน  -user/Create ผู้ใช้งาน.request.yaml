@@ -1,0 +1,19 @@
+$kind: http-request
+description: 201 · bcrypt ฝั่งเซิร์ฟเวอร์ · status_change_pw = 1 ตาม DEFAULT ของตาราง ผู้ใช้ใหม่จึงต้องเปลี่ยนรหัสผ่านที่ตั้งให้ตอนเข้าระบบครั้งแรก · 409 DUPLICATE ถ้า user_name ซ้ำ · 403 FORBIDDEN ถ้าไม่ใช่ ADMIN
+url: "{{api}}/users"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "user_name": "somchai",
+      "password": "Penbun2026",
+      "full_name": "สมชาย เกษมสุข",
+      "email": "somchai@penbun.local",
+      "user_level": "USER",
+      "warehouse_id": "{{warehouse_id}}",
+      "remark": "หัวหน้าคลัง DC-01"
+    }
+order: 3000

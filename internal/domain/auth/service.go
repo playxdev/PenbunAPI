@@ -235,6 +235,11 @@ func toUserInfo(u *User) *UserInfo {
 	return info
 }
 
+// ValidatePasswordPolicy เป็นกติกาเดียวของทั้งระบบ
+// domain/user เรียกใช้ตัวนี้ตอนสร้างผู้ใช้ใหม่ ถ้าปล่อยให้แต่ละที่เขียนเอง
+// รหัสผ่านที่ตั้งตอนสร้างจะอ่อนกว่ารหัสผ่านที่ผู้ใช้เปลี่ยนเองได้
+func ValidatePasswordPolicy(pw string) error { return validatePasswordPolicy(pw) }
+
 func validatePasswordPolicy(pw string) error {
 	if len([]rune(pw)) < 8 {
 		return httpx.Validation("รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร")
