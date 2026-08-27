@@ -7,6 +7,7 @@ import (
 
 	"penbun/api/internal/domain/book"
 	"penbun/api/internal/domain/document"
+	"penbun/api/internal/domain/user"
 	"penbun/api/internal/resources"
 	"penbun/api/internal/schema"
 )
@@ -104,5 +105,11 @@ func TestDescriptorMatchesSchema(t *testing.T) {
 	// /book เขียนสองตารางผ่าน handler ที่เขียนเอง ไม่ได้อยู่ใน resources.All()
 	for table, fields := range book.FieldSets() {
 		t.Run("book/"+table, func(t *testing.T) { check(t, table, fields) })
+	}
+
+	// POST /users เขียน tb_users ผ่าน handler ที่เขียนเองด้วยเหตุผลเดียวกัน
+	// descriptor ของ resource users ตั้ง ReadOnly ไว้และไม่มี Fields เลย
+	for table, fields := range user.FieldSets() {
+		t.Run("user/"+table, func(t *testing.T) { check(t, table, fields) })
 	}
 }

@@ -97,7 +97,8 @@ penbun-api/
         ├── book/
         │   └── handler.go               เขียนสองตารางในทรานแซกชันเดียว
         ├── user/
-        │   └── handler.go               สร้างผู้ใช้ — bcrypt + ตรวจ user_level
+        │   ├── handler.go               สร้างผู้ใช้ — bcrypt + ตรวจ user_level
+        │   └── handler_test.go
         ├── stock/
         │   ├── repo.go                  ทางเดียวที่โค้ดแตะสต็อกได้
         │   └── handler.go               คงเหลือ · เคลื่อนไหว · ปรับ · โอน · สร้างใหม่
@@ -452,6 +453,10 @@ engine กลางไว้เพราะ `user_password` ต้องผ่�
 ที่หลุดจาก schema ไม่แสดงอาการตอนเริ่มทำงานและไม่แสดงตอนอ่าน มันโผล่ตอนมีคนกดบันทึกจริง
 `MaxLen` ที่กว้างกว่าคอลัมน์คือกรณีที่แย่ที่สุด เพราะผ่าน validation แล้วไปตายตอน `INSERT`
 กลายเป็น 500 ทั้งที่ผู้ใช้กรอกมาถูกตามที่ API บอก
+
+เทสต์นี้ครอบ `resources.All()` · header กับ item ของทุก `document.Spec` · และ handler ที่
+เขียนเองซึ่งไม่ได้อยู่ใน descriptor ตัวไหนเลย — `book.FieldSets()` กับ `user.FieldSets()`
+handler ที่เขียนเองคือจุดที่หลุดง่ายที่สุด เพราะไม่มี descriptor คอยผูกชื่อคอลัมน์ไว้ให้
 
 ---
 

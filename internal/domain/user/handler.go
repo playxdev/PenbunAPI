@@ -53,6 +53,34 @@ var levels = map[string]bool{"ADMIN": true, "USER": true}
 // ตัวเลข จุด ขีดกลางและขีดล่าง เพื่อไม่ให้บันทึกการแก้ไขอ่านยากหรือคัดลอกผิด
 var userNamePattern = regexp.MustCompile(`^[a-zA-Z0-9._-]{3,50}$`)
 
+// writtenFields คือคอลัมน์ของ tb_users ที่ endpoint นี้เขียนจริง
+//
+// ประกาศไว้เป็น schema.Field เพื่อสองอย่าง: ความยาวสูงสุดที่ validate() ใช้มาจาก
+// ที่เดียวกับที่เทสต์ drift เอาไปเทียบกับ INFORMATION_SCHEMA — /book เคยรับ
+// translator ที่ไม่มีคอลัมน์รองรับอยู่หลายเดือนเพราะ handler ที่เขียนเองไม่เคยถูกตรวจ
+var writtenFields = []schema.Field{
+	{Name: "user_name", Kind: schema.KindString, Required: true, MaxLen: 50, Label: "ชื่อผู้ใช้"},
+	{Name: "user_password", Kind: schema.KindString, Required: true, MaxLen: 255, Label: "รหัสผ่าน"},
+	{Name: "user_level", Kind: schema.KindString, Required: true, MaxLen: 50, Label: "สิทธิ์การใช้งาน"},
+	{Name: "full_name", Kind: schema.KindString, MaxLen: 150, Label: "ชื่อ–สกุล"},
+	{Name: "email", Kind: schema.KindString, MaxLen: 100, Label: "อีเมล"},
+	{Name: "remark", Kind: schema.KindString, MaxLen: 255, Label: "หมายเหตุ"},
+}
+
+// FieldSets คืนคอลัมน์ที่ endpoint นี้เขียน แยกตามตาราง — ให้เทสต์ drift เรียกใช้
+func FieldSets() map[string][]schema.Field {
+	return map[string][]schema.Field{"tb_users": writtenFields}
+}
+
+func field(name string) schema.Field {
+	for _, f := range writtenFields {
+		if f.Name == name {
+			return f
+		}
+	}
+	panic("user: ไม่รู้จักคอลัมน์ " + name)
+}
+
 var warehouseRef = []schema.Ref{
 	{Field: "warehouse_id", Table: "tb_warehouse", Column: "ref_warehouse_auto",
 		Label: "คลังประจำตัว"},
@@ -183,21 +211,24 @@ func (h *Handler) validate(req *createRequest) (map[string]any, error) {
 		"user_password": string(hash),
 		"user_level":    level,
 	}
-	if err := optional(vals, "full_name", req.FullName, 150, "ชื่อ–สกุล"); err != nil {
-		return nil, err
-	}
-	if err := optional(vals, "email", req.Email, 100, "อีเมล"); err != nil {
-		return nil, err
-	}
-	if err := optional(vals, "remark", req.Remark, 255, "หมายเหตุ"); err != nil {
-		return nil, err
+	for _, o := range []struct {
+		name string
+		v    *string
+	}{
+		{"full_name", req.FullName},
+		{"email", req.Email},
+		{"remark", req.Remark},
+	} {
+		if err := optional(vals, field(o.name), o.v); err != nil {
+			return nil, err
+		}
 	}
 	return vals, nil
 }
 
 // optional เก็บค่าที่ส่งมาและไม่ว่าง ค่าที่ว่างถูกข้ามไปเพื่อให้คอลัมน์เป็น NULL
 // ตาม DEFAULT ของตาราง แทนที่จะเป็นสตริงว่างที่ดูเหมือนมีค่าแต่ไม่มี
-func optional(vals map[string]any, col string, v *string, maxLen int, label string) error {
+func optional(vals map[string]any, f schema.Field, v *string) error {
 	if v == nil {
 		return nil
 	}
@@ -205,10 +236,10 @@ func optional(vals map[string]any, col string, v *string, maxLen int, label stri
 	if s == "" {
 		return nil
 	}
-	if len([]rune(s)) > maxLen {
-		return httpx.Validation(label+" ยาวเกิน "+strconv.Itoa(maxLen)+" ตัวอักษร").
-			WithField(col, httpx.CodeValidationFailed, "")
+	if len([]rune(s)) > f.MaxLen {
+		return httpx.Validation(f.DisplayLabel()+" ยาวเกิน "+strconv.Itoa(f.MaxLen)+" ตัวอักษร").
+			WithField(f.Name, httpx.CodeValidationFailed, "")
 	}
-	vals[col] = s
+	vals[f.Name] = s
 	return nil
 }
