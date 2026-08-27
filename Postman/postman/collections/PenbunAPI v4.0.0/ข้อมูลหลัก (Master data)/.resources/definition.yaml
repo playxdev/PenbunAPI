@@ -1,3 +1,3 @@
 $kind: collection
-description: 18 resource สร้างจาก descriptor ตัวเดียวกัน — engine กลางให้ 5 endpoint ต่อ resource (book อ่านอย่างเดียว จึงมีแค่ 2)
+description: 21 resource สร้างจาก descriptor ตัวเดียวกัน — engine กลางให้ 5 endpoint ต่อ resource (book กับ user อ่านอย่างเดียว จึงมีแค่ 2 และ user ยังจำกัดไว้ที่ ADMIN)
 order: 2000

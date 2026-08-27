@@ -39,6 +39,12 @@ func (e *Engine) Mount(router fiber.Router, r *Resource) error {
 	}
 	g := router.Group("/" + r.Name)
 
+	// ตัวกรองสิทธิ์ต้องอยู่บนกลุ่ม ไม่ใช่บนแต่ละ endpoint
+	// เส้นทางที่เพิ่มทีหลังจะได้ไม่หลุดออกไปเพราะมีคนลืมใส่
+	if len(r.RequireLevel) > 0 {
+		g.Use(mw.RequireLevel(r.RequireLevel...))
+	}
+
 	g.Get("", e.list(r))
 	g.Get("/:id", e.getByID(r))
 

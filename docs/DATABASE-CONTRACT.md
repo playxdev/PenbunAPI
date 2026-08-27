@@ -7,6 +7,11 @@ behaviour. These are deployment prerequisites, not schema definitions.
   since PenbunSQL v8 — and omit soft-deleted rows. No descriptor builds a
   derived table any more, so a view that is missing or renamed answers
   `Invalid object name` on the first request rather than degrading quietly.
+- `vw_users` (PenbunSQL v11) must not select `user_password` or
+  `counting_password_fail`. The `user` resource is mounted through the generic
+  CRUD engine, whose list query is `SELECT *` over the view, so anything the
+  view returns is returned to every ADMIN who lists users. `domain/auth` reads
+  `tb_users` directly because it needs the hash the view withholds.
 - Tables provide internal `autoID` values while public API references use the
   business IDs resolved by `repository.Resolver`.
 - Every table carries an `AFTER INSERT` trigger that fills the business ID, so

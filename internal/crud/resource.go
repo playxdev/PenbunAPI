@@ -36,6 +36,11 @@ type Resource struct {
 	Fields  []schema.Field
 
 	ReadOnly bool // true = mount เฉพาะ GET
+
+	// RequireLevel จำกัดทุก endpoint ของ resource นี้ไว้ที่ user_level ที่ระบุ
+	// ว่างไว้ = ผู้ใช้ที่ login แล้วทุกคนเข้าได้ ซึ่งเป็นค่าปกติของ master data
+	// resource ที่คืนข้อมูลของคนอื่น เช่น ผู้ใช้งาน ต้องระบุเสมอ
+	RequireLevel []string
 }
 
 func (r *Resource) field(name string) (schema.Field, bool) {

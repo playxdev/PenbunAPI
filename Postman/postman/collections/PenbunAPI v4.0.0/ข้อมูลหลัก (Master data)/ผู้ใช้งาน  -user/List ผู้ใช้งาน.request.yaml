@@ -1,0 +1,38 @@
+$kind: http-request
+description: 200 · envelope data = {items, page, limit, total, total_pages} · 403 FORBIDDEN ถ้าไม่ใช่ ADMIN
+url: "{{api}}/user?page=1&limit=50"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+    disabled: false
+    description: หน้าที่ (>=1)
+  - key: limit
+    value: "50"
+    disabled: false
+    description: จำนวนต่อหน้า (1-200, clamp)
+  - key: q
+    value: ""
+    disabled: true
+    description: ค้นหาแบบ LIKE ใน user_name, full_name, email
+  - key: sort
+    value: username
+    disabled: true
+    description: username | name | level | login | updated  (นำหน้าด้วย - เพื่อเรียงจากมากไปน้อย)
+  - key: user_level
+    value: ADMIN
+    disabled: true
+    description: ADMIN | USER
+  - key: warehouse_id
+    value: ""
+    disabled: true
+    description: คลังประจำตัว (business id)
+  - key: status_user_locked
+    value: "true"
+    disabled: true
+    description: true | false — บัญชีที่ถูกล็อกจากการกรอกรหัสผ่านผิด
+  - key: is_active
+    value: "true"
+    disabled: true
+    description: true | false
+order: 1000

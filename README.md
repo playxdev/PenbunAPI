@@ -74,12 +74,13 @@ penbun-api/
     │   ├── engine.go                    5 endpoint ต่อ resource
     │   └── query_test.go
     │
-    ├── resources/                       ── descriptor 18 ตัว (ห้าม import fiber)
+    ├── resources/                       ── descriptor 21 ตัว (ห้าม import fiber)
     │   ├── registry.go                  All() · Validate()
     │   ├── company.go                   บริษัท · ส่วนลด
     │   ├── lookup.go                    ตารางอ้างอิง 7 ตัว
     │   ├── master.go                    คลัง · กลุ่มสินค้า · คู่ค้า · ลูกค้า · สาย
     │   ├── product.go                   สินค้า · SKU · หนังสือ
+    │   ├── user.go                      ผู้ใช้งาน — อ่านอย่างเดียว เฉพาะ ADMIN
     │   └── registry_test.go
     │
     └── domain/                          ── ส่วนที่มีตรรกะเฉพาะ
@@ -293,6 +294,23 @@ var Supplier = &crud.Resource{
 }
 ```
 
+### จำกัดสิทธิ์ของ resource
+
+`RequireLevel` ติดตัวกรองไว้ที่กลุ่มเส้นทางของ resource ทั้งกลุ่ม ไม่ใช่ทีละ endpoint
+เส้นทางที่เพิ่มทีหลังจะได้ไม่หลุดออกไปเพราะมีคนลืมใส่
+
+```go
+ReadOnly:     true,
+RequireLevel: []string{"ADMIN"},
+```
+
+`resources` ยังห้าม import `fiber` เหมือนเดิม descriptor จึงถือแค่ชื่อระดับสิทธิ์
+เป็นข้อความ ส่วน `crud.Engine.Mount` เป็นฝ่ายแปลงเป็น `mw.RequireLevel` ตอนติดตั้ง
+
+`user` เป็น resource เดียวที่ใช้ทั้งสองอย่างพร้อมกัน การสร้างและแก้ผู้ใช้ผ่าน generic
+engine จะเปิดทางให้เขียน `user_password` กับ `user_level` ตรง ๆ ซึ่งต้องผ่าน bcrypt
+และต้องมีกติกากันคนลบสิทธิ์ ADMIN คนสุดท้ายทิ้ง — งานนั้นเป็นของ domain แยกต่างหาก
+
 ### เพิ่มเอกสารชนิดใหม่
 
 เขียน `document.Spec` แล้วต่อท้าย `document.All()` — ได้ครบ 9 endpoint
@@ -309,13 +327,14 @@ var Supplier = &crud.Resource{
 | :--- | :--- | ---: |
 | การเข้าสู่ระบบ | `/auth/login` `/refresh` `/me` `/change-password` `/logout` · `/users/{id}/unlock` | 6 |
 | Master data | 20 resource × 5 | 100 |
+| ผู้ใช้งาน | `GET /user` `GET /user/{id}` — `RequireLevel: ADMIN` | 2 |
 | เอกสาร | `receive-note` `order` `return-note` `vendor-return-note` × 9 | 36 |
 | หนังสือ | `POST` `PUT` `DELETE /book` | 3 |
 | สต็อก | `onhand` `movements` `adjust` `transfer` `rebuild` | 5 |
 | ฝากขาย | `outstanding` `rebuild` | 2 |
 | การจัดสรร | `history` `pull` | 2 |
 | ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` | 4 |
-| | **รวม** | **158** |
+| | **รวม** | **160** |
 
 ---
 

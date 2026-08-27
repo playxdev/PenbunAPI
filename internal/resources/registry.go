@@ -11,6 +11,9 @@ import "penbun/api/internal/crud"
 // เพิ่ม resource ใหม่ = เขียน descriptor แล้วต่อท้ายรายการนี้
 func All() []*crud.Resource {
 	return []*crud.Resource{
+		// ชั้นระบบ — อ่านอย่างเดียว และเฉพาะ ADMIN
+		User,
+
 		// ชั้นข้อมูลอ้างอิง
 		Company,
 		CustomerType,

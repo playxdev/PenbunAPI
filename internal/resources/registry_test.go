@@ -79,3 +79,13 @@ func TestWritableResourcesDeclareRequiredFields(t *testing.T) {
 func TestBookIsReadOnlyInGenericEngine(t *testing.T) {
 	assert.True(t, Book.ReadOnly)
 }
+
+// ผู้ใช้งานเป็น resource เดียวที่คืนข้อมูลของคนอื่น
+// ถ้าวันหนึ่งมีคนถอด RequireLevel ออก รายชื่อผู้ใช้ทั้งระบบจะเปิดให้ทุกคนที่ login
+// อ่านได้ทันที เทสต์นี้จึงล็อกทั้งสองอย่างไว้พร้อมกัน
+func TestUserResourceIsAdminOnlyAndReadOnly(t *testing.T) {
+	assert.Equal(t, []string{"ADMIN"}, User.RequireLevel)
+	assert.True(t, User.ReadOnly, "การสร้างและแก้ผู้ใช้ต้องไม่ผ่าน generic engine")
+	assert.Equal(t, "dbo.vw_users", User.Source,
+		"ต้องอ่านผ่าน View ที่ไม่คืน user_password")
+}

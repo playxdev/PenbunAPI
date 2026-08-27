@@ -1,0 +1,4 @@
+$kind: collection
+name: ผู้ใช้งาน  /user
+description: "อ่านอย่างเดียว และเฉพาะ ADMIN — 403 FORBIDDEN ถ้า user_level ไม่ใช่ ADMIN. อ่านผ่าน vw_users (PenbunSQL v11) ซึ่งไม่คืน user_password และ counting_password_fail. การปลดล็อกบัญชีอยู่ที่ PUT /users/{id}/unlock ในกลุ่มการเข้าสู่ระบบ"
+order: 19000
