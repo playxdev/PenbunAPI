@@ -75,10 +75,11 @@ func (s *Service) Login(ctx context.Context, username, password string) (*TokenP
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		if regErr := s.repo.RegisterFailure(ctx, user.AutoID, s.cfg.AuthMaxFail); regErr != nil {
+		locked, regErr := s.repo.RegisterFailure(ctx, user.AutoID, s.cfg.AuthMaxFail)
+		if regErr != nil {
 			return nil, regErr
 		}
-		if user.FailCount+1 >= s.cfg.AuthMaxFail {
+		if locked {
 			return nil, httpx.Locked("ใส่รหัสผ่านผิดครบจำนวนที่กำหนด บัญชีถูกระงับ กรุณาติดต่อผู้ดูแลระบบ")
 		}
 		return nil, invalidCredentials()

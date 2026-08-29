@@ -370,7 +370,7 @@ engine กลางไว้เพราะ `user_password` ต้องผ่�
 | `NOT_FOUND` | 404 | |
 | `DUPLICATE` `REF_IN_USE` `INSUFFICIENT_STOCK` `ALREADY_POSTED` | 409 | |
 | `ENDPOINT_REMOVED` | 410 | เส้นทางรุ่นก่อน ให้ไปแก้โค้ดฝั่งผู้เรียก |
-| `ACCOUNT_LOCKED` | 423 | |
+| `ACCOUNT_LOCKED` | 423 | ใส่รหัสผ่านผิดครบ `AUTH_MAX_FAIL` ครั้ง ปลดล็อกด้วย `PUT /users/{id}/unlock` ซึ่งล้าง `status_user_locked` และ `counting_password_fail` พร้อมกัน |
 | `BUSINESS_RULE` | 422 | `message` มาจากกฎในฐานข้อมูลโดยตรง แสดงให้ผู้ใช้อ่านได้เลย |
 | `INTERNAL` `DB_UNAVAILABLE` | 500 · 503 | ใช้ `trace_id` ตามหาบรรทัด `ERROR` ใน log (ดูหัวข้อ 8) |
 

@@ -65,15 +65,39 @@ func scanUser(row *sql.Row) (*User, error) {
 
 // RegisterFailure เพิ่มตัวนับรหัสผิด และล็อกบัญชีเมื่อถึงเพดาน
 // ทำใน UPDATE คำสั่งเดียวเพื่อไม่ให้ผู้โจมตีที่ยิงพร้อมกันหลายเส้นเลี่ยงตัวนับได้
-func (r *Repo) RegisterFailure(ctx context.Context, autoID, maxFail int) error {
+//
+// ถ้าแถวปลดล็อกอยู่แต่ตัวนับยังค้างเต็มเพดาน แปลว่ามีคนแก้ status_user_locked
+// ในฐานตรง ๆ โดยไม่ล้าง counting_password_fail กรณีนี้ถือว่าเริ่มนับรอบใหม่
+// (ตั้งตัวนับเป็น 1 และคงสถานะปลดล็อก) ไม่ใช่ล็อกซ้ำทันทีที่พิมพ์ผิดครั้งเดียว
+//
+// คืนค่าสถานะล็อกหลังอัปเดตจริง service จะได้ไม่ต้องเดาจาก FailCount ที่อ่านมาก่อนหน้า
+func (r *Repo) RegisterFailure(ctx context.Context, autoID, maxFail int) (bool, error) {
+	// ต้อง OUTPUT ... INTO เพราะ tb_users มี AFTER UPDATE trigger อยู่
+	// SQL Server ไม่ยอมให้ OUTPUT คืนค่าตรงบนตารางที่มี trigger เปิดใช้งาน
 	const q = `
+DECLARE @out TABLE (locked bit);
 UPDATE dbo.tb_users
-   SET counting_password_fail = counting_password_fail + 1,
-       status_user_locked = CASE WHEN counting_password_fail + 1 >= @p2 THEN 1 ELSE status_user_locked END,
+   SET counting_password_fail = CASE WHEN status_user_locked = 0 AND counting_password_fail >= @p2
+                                     THEN 1
+                                     ELSE counting_password_fail + 1 END,
+       status_user_locked     = CASE WHEN status_user_locked = 0 AND counting_password_fail >= @p2
+                                     THEN 0
+                                     WHEN counting_password_fail + 1 >= @p2
+                                     THEN 1
+                                     ELSE status_user_locked END,
        update_by = N'System'
- WHERE autoID = @p1`
-	_, err := r.db.Exec().ExecContext(ctx, q, autoID, maxFail)
-	return err
+ OUTPUT inserted.status_user_locked INTO @out
+ WHERE autoID = @p1;
+SELECT TOP 1 locked FROM @out;`
+	var locked bool
+	err := r.db.Exec().QueryRowContext(ctx, q, autoID, maxFail).Scan(&locked)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, ErrUserNotFound
+	}
+	if err != nil {
+		return false, err
+	}
+	return locked, nil
 }
 
 func (r *Repo) RegisterSuccess(ctx context.Context, autoID int) error {

@@ -29,6 +29,20 @@ behaviour. These are deployment prerequisites, not schema definitions.
   `autoID` through `repository.InsertReturningAuto` and re-reads the row through
   a view in the same transaction. Dropping or disabling those triggers changes
   this contract and breaks business ID generation.
+- `tb_users` also carries `AFTER UPDATE` triggers (`TRIG_AUTO_UPDATE_DATE_TB_USERS`,
+  `TRIG_SYNC_STATUS_TB_USERS`), so the same `OUTPUT ... INTO` rule applies to
+  `UPDATE`, not only to `INSERT`. `auth.Repo.RegisterFailure` reads the
+  post-update lock state back through a table variable for exactly this reason.
+- Account locking is driven by two columns that must be read as a pair.
+  `status_user_locked` is the gate `POST /auth/login` checks; `counting_password_fail`
+  is the streak that trips it once it reaches `AUTH_MAX_FAIL`. Clearing the lock
+  in the database without clearing the counter used to re-lock the account on the
+  very next wrong password, because the counter was already at the ceiling.
+  `RegisterFailure` now treats "unlocked but counter at or above the ceiling" as a
+  fresh streak and restarts the counter at 1, so an administrator who edits only
+  `status_user_locked` gets a working account. `PUT /users/{user_id}/unlock` still
+  clears both and remains the supported path.
+
 - Stock mutations and document posting are performed through the database
   routines expected by the domain repositories. Both sides take application
   locks over the same key — `PENBUN:STOCK:<sku autoID>:<warehouse autoID>` —
