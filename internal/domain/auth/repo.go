@@ -134,3 +134,62 @@ UPDATE dbo.tb_users
 	}
 	return res.RowsAffected()
 }
+
+// Privilege คือสิ่งที่ผู้ใช้คนหนึ่งทำได้กับ resource หนึ่งตัว ตามที่ฐานข้อมูลบอก
+// ชื่อสี่ช่องตรงกับคอลัมน์ของ tb_privilege ซึ่งตรงกับช่องติ๊กสี่ช่องบนหน้าจอ
+// M002_P0004 ของ Authentication Spec
+type Privilege struct {
+	Resource string
+	View     bool
+	Insert   bool
+	Update   bool
+	Delete   bool
+}
+
+// PrivilegesFor คืนสิทธิ์ผลลัพธ์ของผู้ใช้หนึ่งคน
+//
+// ทางหลักคือ vw_user_privilege ซึ่งรวมสิทธิ์ข้ามบทบาทแบบ union ให้แล้ว
+// (ผู้ใช้ถือได้หลายบทบาท บทบาทใดให้ผ่านก็ผ่าน)
+//
+// ทางรองมีไว้เพราะ v12 เพิ่งวางตาราง RBAC ลงฐาน แต่ยังไม่มีอะไรผูกบทบาทให้
+// ผู้ใช้ที่สร้างผ่าน POST /users — มีแต่ผู้ใช้ตั้งต้นที่ SEED ผูกไว้ให้ ผู้ใช้ที่
+// ยังไม่มีแถวใน tb_user_role จึงตกมาที่บทบาทที่ role_code ตรงกับ user_level ของตัวเอง
+// ซึ่ง SEED ตั้งไว้ให้เท่ากับกฎที่ API บังคับอยู่จริงพอดี
+//
+// ทางรองไม่ได้เขียนกฎซ้ำไว้ใน Go — มันอ่าน tb_privilege เหมือนกัน ต่างแค่ทางที่
+// เดินไปถึงบทบาท ฐานข้อมูลจึงยังเป็นแหล่งความจริงแหล่งเดียว
+// ตัดทางรองนี้ทิ้งได้เมื่อ POST /users เขียน tb_user_role ให้ทุกคนแล้ว
+func (r *Repo) PrivilegesFor(ctx context.Context, userID, userLevel string) ([]Privilege, error) {
+	const q = `
+SELECT resource_code, can_view, can_insert, can_update, can_delete
+  FROM dbo.vw_user_privilege
+ WHERE user_id = @p1
+UNION ALL
+SELECT p.resource_code,
+       CAST(p.can_view AS INT), CAST(p.can_insert AS INT),
+       CAST(p.can_update AS INT), CAST(p.can_delete AS INT)
+  FROM dbo.tb_privilege p
+  INNER JOIN dbo.tb_role r ON r.autoID = p.ref_role_auto
+ WHERE r.role_code = @p2
+   AND r.is_delete = 0 AND r.is_active = 1
+   AND p.is_delete = 0 AND p.is_active = 1
+   AND NOT EXISTS (SELECT 1 FROM dbo.vw_user_privilege WHERE user_id = @p1)`
+
+	rows, err := r.db.Exec().QueryContext(ctx, q, userID, userLevel)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]Privilege, 0, 32)
+	for rows.Next() {
+		var p Privilege
+		var v, i, u, d int
+		if err := rows.Scan(&p.Resource, &v, &i, &u, &d); err != nil {
+			return nil, err
+		}
+		p.View, p.Insert, p.Update, p.Delete = v == 1, i == 1, u == 1, d == 1
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}

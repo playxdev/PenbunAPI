@@ -334,6 +334,40 @@ descriptor ของ `book` ตั้ง `ReadOnly` คู่กับ `RequireL
 เส้นทางเอกสาร (`domain/document`) และ `/allocation/pull` ยังเปิดให้ทุกคนที่ login เขียนได้
 โดยตั้งใจ นั่นคืองานประจำวันของผู้ใช้ทั่วไป
 
+### `GET /auth/me` — สิทธิ์จาก `vw_user_privilege`
+
+ตั้งแต่ PenbunSQL v12 สิทธิ์อยู่ในฐานเป็น `tb_role` · `tb_user_role` ·
+`tb_privilege_group` · `tb_privilege` และ `GET /auth/me` คืนสิทธิ์ผลลัพธ์มาด้วย
+คีย์คือชื่อ resource เดียวกับ `crud.Resource.Name`
+
+```json
+{ "user_id": "USRA000001", "user_name": "admin", "user_level": "ADMIN",
+  "permissions": {
+    "customer": { "view": true, "insert": true, "update": true, "delete": true },
+    "order":    { "view": true, "insert": true, "update": true, "delete": true } } }
+```
+
+ละเอียดกว่า `/meta/permissions` ที่คืนแค่ `read` / `write` เพราะอ่านสี่การกระทำ
+จาก `tb_privilege` ตรง ๆ ตามที่หน้าจอ M002_P0004 ของสเปกออกแบบไว้
+
+**ยังไม่ใช่ตัวบังคับสิทธิ์** ตัวที่บังคับคือ `mw.RequireLevel` บนเส้นทางแต่ละเส้น
+ซึ่งยังอ่าน `user_level` อยู่ ขั้นนี้คือการเปิดทางให้หน้าจออ่านจากแหล่งเดียวกับที่
+จะบังคับจริงในอนาคต ก่อนจะสลับตัวบังคับ — สลับพร้อมกันทั้งสองฝั่งในครั้งเดียว
+แล้วผิด จะแยกไม่ออกว่าผิดที่ข้อมูลหรือผิดที่การบังคับ
+
+`vw_user_privilege` รวมสิทธิ์ข้ามบทบาทแบบ union ให้แล้ว ผู้ใช้ถือได้หลายบทบาท
+บทบาทใดให้ผ่านก็ผ่าน
+
+**ทางรอง** — `POST /users` ยังไม่เขียน `tb_user_role` ผู้ใช้ที่สร้างผ่าน API จึงยัง
+ไม่มีบทบาท มีแต่ผู้ใช้ตั้งต้นที่ SEED ผูกไว้ให้ `Repo.PrivilegesFor` จึงตกมาที่บทบาท
+ที่ `role_code` ตรงกับ `user_level` ของคนนั้น ซึ่ง SEED ตั้งไว้เท่ากับกฎที่ API บังคับ
+อยู่จริงพอดี ทางรองนี้ไม่ได้เขียนกฎซ้ำใน Go — อ่าน `tb_privilege` เหมือนกัน ต่างแค่
+ทางที่เดินไปถึงบทบาท ตัดทิ้งได้เมื่อ `POST /users` เขียน `tb_user_role` ให้ทุกคนแล้ว
+
+ฐานที่ยังเป็น v11 ไม่มี View นี้ `GET /auth/me` จะตอบ error ตั้งแต่คำขอแรกโดยตั้งใจ
+ไม่กลืน error แล้วคืนรายการว่าง เพราะ "ทุกคนไม่มีสิทธิ์อะไรเลย" เป็นอาการที่
+ไล่หาต้นตอยากกว่าข้อความว่าหา `dbo.vw_user_privilege` ไม่เจอ
+
 ### `GET /meta/permissions`
 
 บอกหน้าจอว่าผู้ใช้ที่ถือ token นี้อ่านและเขียน resource ไหนได้บ้าง คำนวณจาก descriptor

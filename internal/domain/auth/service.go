@@ -43,6 +43,22 @@ type UserInfo struct {
 	UserLevel          string  `json:"user_level"`
 	MustChangePassword bool    `json:"must_change_password"`
 	LastLoginDate      *string `json:"last_login_date"`
+
+	// Permissions คือสิทธิ์ที่ฐานข้อมูลบอกว่าผู้ใช้คนนี้มี คีย์คือชื่อ resource
+	// เดียวกับ crud.Resource.Name ค่าคือสี่การกระทำของ tb_privilege
+	//
+	// ยังไม่ใช่ตัวที่บังคับสิทธิ์ ตัวที่บังคับคือ mw.RequireLevel บนเส้นทางแต่ละเส้น
+	// ซึ่งยังอ่าน user_level อยู่ ที่นี่คือการเปิดทางให้หน้าจอเริ่มอ่านจากแหล่งเดียว
+	// กับที่จะบังคับจริงในอนาคต ก่อนจะสลับตัวบังคับ
+	Permissions map[string]ResourceAccess `json:"permissions"`
+}
+
+// ResourceAccess คือสี่การกระทำต่อ resource หนึ่งตัว ชื่อช่องตรงกับคอลัมน์ tb_privilege
+type ResourceAccess struct {
+	View   bool `json:"view"`
+	Insert bool `json:"insert"`
+	Update bool `json:"update"`
+	Delete bool `json:"delete"`
 }
 
 // invalidCredentials — ข้อความเดียวสำหรับทุกกรณีที่เข้าสู่ระบบไม่ผ่าน
@@ -124,7 +140,33 @@ func (s *Service) Me(ctx context.Context, userID string) (*UserInfo, error) {
 		}
 		return nil, err
 	}
-	return toUserInfo(user), nil
+
+	// ปล่อยให้ error ขึ้นไปตามปกติ ไม่กลืนแล้วคืนรายการว่าง
+	// ฐานที่ยังเป็น v11 จะไม่มี vw_user_privilege และต้องรู้ตัวตั้งแต่คำขอแรก
+	// ไม่ใช่ค่อยมางงว่าทำไมทุกคนไม่มีสิทธิ์อะไรเลย
+	privs, err := s.repo.PrivilegesFor(ctx, user.UserID, user.UserLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	info := toUserInfo(user)
+	info.Permissions = toPermissions(privs)
+	return info, nil
+}
+
+// toPermissions แปลงแถวจากฐานเป็นแผนที่ที่หน้าจอใช้ได้ตรง ๆ
+// แยกออกมาจาก Me เพื่อให้ทดสอบได้โดยไม่ต้องมีฐานข้อมูล
+//
+// คืนแผนที่ว่าง ไม่ใช่ nil เมื่อไม่มีสิทธิ์เลย — JSON จะได้เป็น {} ไม่ใช่ null
+// หน้าจอจึงวนลูปได้โดยไม่ต้องเช็ค null ก่อนทุกครั้ง
+func toPermissions(rows []Privilege) map[string]ResourceAccess {
+	out := make(map[string]ResourceAccess, len(rows))
+	for _, p := range rows {
+		out[p.Resource] = ResourceAccess{
+			View: p.View, Insert: p.Insert, Update: p.Update, Delete: p.Delete,
+		}
+	}
+	return out
 }
 
 func (s *Service) ChangePassword(ctx context.Context, userID, current, next string) (*TokenPair, error) {
