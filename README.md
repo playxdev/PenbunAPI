@@ -307,32 +307,29 @@ ReadOnly:     true,
 RequireLevel: []string{"ADMIN"},
 ```
 
-`RequireLevelWrite` จำกัดเฉพาะ `POST` / `PUT` / `DELETE` แยกจากการอ่าน เพราะข้อมูลหลัก
-ต้องให้ทุกคนที่ login อ่านได้ — หน้าจอเอกสารเลือกลูกค้า สินค้า และคลังจากตารางพวกนี้ —
-แต่การแก้ข้อมูลหลักเป็นงานของ ADMIN descriptor ทุกตัวใน `resources` ที่เขียนได้จึงตั้ง
+สิทธิ์ไม่ได้อยู่ใน descriptor แล้ว descriptor บอกแค่ว่า resource ชื่ออะไรและมีคอลัมน์อะไร
+ส่วนใครทำอะไรได้อยู่ใน `tb_privilege` อ่านผ่าน `vw_user_privilege`
 
-```go
-RequireLevelWrite: adminWrite, // []string{"ADMIN"}
-```
+`internal/platform/authz` เป็นที่เดียวที่ตัดสิน `GuardResource(repo, name)` อ่านการกระทำ
+จาก HTTP method เอง — `GET`/`HEAD` เป็น view · `POST` เป็น insert · `PUT`/`PATCH` เป็น update ·
+`DELETE` เป็น delete — ตัวกรองจึงเหลือตัวเดียวครอบทั้งอ่านและเขียน ส่วน `Guard(repo, name, action)`
+ใช้กับเส้นทางที่ method ไม่ได้บอกความหมายตรงตัว เช่น `PUT /users/{id}/unlock` ซึ่งเป็นการ
+update ผู้ใช้ ไม่ใช่ update "unlock"
 
-`Resource.Validate` บังคับว่า resource ที่ไม่ใช่ `ReadOnly` ต้องประกาศ `RequireLevelWrite`
-เสมอ ลืมแล้ว process ไม่ start — ดีกว่าปล่อยตารางใหม่เปิดให้ทุกคนที่ login แก้และลบเงียบ ๆ
+ตัวกรองผูก**ทีละเส้นทาง** ไม่ใช่บนกลุ่ม เพราะ middleware ของกลุ่มใน Fiber v3 ไม่ปรากฏใน
+`Route.Handlers` เทสต์จึงมองไม่เห็นว่าเส้นทางไหนถูกกรองอยู่จริง หลักประกันว่าไม่มีใครลืมใส่
+คือ `TestEveryRouteCarriesThePrivilegeGuard` ที่นับ handler ต่อเส้นทาง
 
-ต่างจาก `RequireLevel` ตรงที่ตัวกรองของการเขียนอยู่บนแต่ละเส้นทาง ไม่ใช่บนกลุ่ม
-เพราะกลุ่มใน Fiber ครอบทุก method การใส่ไว้บนกลุ่มจะกันการอ่านไปด้วย สิ่งที่กันการลืม
-จึงเป็น `Validate` ข้างบน คู่กับ `TestWriteRoutesCarryTheLevelGuard` ที่ตรวจว่าเส้นทาง
-เขียนทุกเส้นถือตัวกรองไว้จริง
+**ทุกทางปฏิเสธเป็นค่าเริ่มต้น** — `Access` ที่เป็น zero value ไม่อนุญาตอะไรเลย ซึ่งเป็นสิ่งที่ได้
+ทั้งจาก resource ที่ไม่มีแถวสิทธิ์และจากชื่อ resource ที่พิมพ์ผิดตอน mount · action และ
+HTTP method ที่ไม่รู้จักถูกปฏิเสธ ไม่ใช่เดาเป็น view · อ่านสิทธิ์ไม่สำเร็จคืน error ไม่ใช่ 403
+คำขอยังถูกปฏิเสธ แต่คนจะได้ไม่ไปไล่แก้สิทธิ์ทั้งที่ต้นเหตุคือฐานข้อมูล
 
-`resources` ยังห้าม import `fiber` เหมือนเดิม descriptor จึงถือแค่ชื่อระดับสิทธิ์
-เป็นข้อความ ส่วน `crud.Engine.Mount` เป็นฝ่ายแปลงเป็น `mw.RequireLevel` ตอนติดตั้ง
+ชื่อ resource ทั้งสองฝั่งเป็นข้อความ ไม่มีอะไรผูกให้ตรงกันตอนคอมไพล์ integration test
+`TestEveryMountedResourceHasPrivilegeRows` จึงเทียบชื่อที่ mount กับแถวใน `tb_privilege`
+ทั้งสองทาง — เพิ่ม descriptor แล้วลืม seed = เส้นทางนั้นตอบ 403 ให้ทุกคนรวมทั้ง ADMIN
 
-`domain/book` ถือการเขียนหนังสือไว้เอง (ต้องเขียนสองตารางในทรานแซกชันเดียว) จึงใส่
-`mw.RequireLevel("ADMIN")` ไว้ที่กลุ่มของตัวเองให้ตรงกับ descriptor ตัวอื่นในชั้นเดียวกัน
-descriptor ของ `book` ตั้ง `ReadOnly` คู่กับ `RequireLevelWrite` ซึ่งแปลว่า "เขียนได้จริง
-แต่เขียนที่ domain package" — `/meta/permissions` อ่านคู่นี้เป็นคำตอบว่าหน้าจอไหนแก้ไขได้
-
-เส้นทางเอกสาร (`domain/document`) และ `/allocation/pull` ยังเปิดให้ทุกคนที่ login เขียนได้
-โดยตั้งใจ นั่นคืองานประจำวันของผู้ใช้ทั่วไป
+**ไม่มีแคช** อ่านฐานทุกคำขอโดยตั้งใจ สิทธิ์ที่ถูกเพิกถอนมีผลกับคำขอถัดไปทันที ไม่ต้องรอ TTL
 
 ### `GET /auth/me` — สิทธิ์จาก `vw_user_privilege`
 
