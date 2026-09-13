@@ -16,6 +16,21 @@ type Row map[string]any
 // จึงต้องติดโซนกลับตอนอ่าน ไม่งั้น client จะตีความเป็น UTC แล้วเพี้ยนไป 7 ชั่วโมง
 var bangkok = time.FixedZone("ICT", 7*3600)
 
+// InBangkok ติดโซน ICT ให้เวลาที่ driver คืนมาแบบไม่มีโซน
+//
+// หน้าปัดไม่ถูกเลื่อน มีแต่การบอกว่าตัวเลขชุดนี้คือเวลาไทย — 17:02 ยังเป็น 17:02
+// แต่กลายเป็น 17:02+07:00 แทนที่จะเป็น 17:02Z ที่เบราว์เซอร์จะบวกอีกเจ็ดชั่วโมง
+//
+// ต้องใช้ทุกที่ที่เวลาออกจาก API ไม่ใช่เฉพาะใน ScanRows — โค้ดที่ Format เองโดยไม่
+// เรียกตัวนี้จะส่งเวลาที่เร็วไปเจ็ดชั่วโมงออกไปเงียบ ๆ
+func InBangkok(t time.Time) time.Time {
+	if t.Location() != time.UTC {
+		return t
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), bangkok)
+}
+
 // ScanRows แปลง *sql.Rows เป็น []Row พร้อมทำให้ชนิดข้อมูลเป็นมิตรกับ JSON
 //
 // จุดสำคัญคือ DECIMAL/MONEY: driver คืนมาเป็น []byte ถ้าปล่อยไปจะกลายเป็น
@@ -99,11 +114,7 @@ func normalize(v any, dbType string) any {
 		}
 	case time.Time:
 		// DATETIME ที่ไม่มีโซน driver จะให้มาเป็น UTC — ย้ายหน้าปัดมาเป็น ICT
-		if val.Location() == time.UTC {
-			val = time.Date(val.Year(), val.Month(), val.Day(),
-				val.Hour(), val.Minute(), val.Second(), val.Nanosecond(), bangkok)
-		}
-		return val.Format(time.RFC3339)
+		return InBangkok(val).Format(time.RFC3339)
 	default:
 		return v
 	}

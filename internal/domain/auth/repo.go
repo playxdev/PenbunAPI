@@ -134,3 +134,33 @@ UPDATE dbo.tb_users
 	}
 	return res.RowsAffected()
 }
+
+// UpdateProfile แก้เฉพาะสองคอลัมน์ที่เจ้าของบัญชีแก้เองได้
+//
+// user_name แก้ไม่ได้เพราะทุกแถวในระบบอ้างมันไว้ใน update_by ส่วน user_level
+// แก้ไม่ได้เพราะคนที่แก้ระดับตัวเองได้คือคนที่ยกสิทธิ์ให้ตัวเองได้ คอลัมน์ทั้งสอง
+// จึงไม่มีทางเดินผ่านปลายทางนี้เลย ไม่ใช่แค่ไม่ได้อยู่ในเอกสาร
+//
+// email เป็น NULL ได้ ค่าว่างจึงถูกเก็บเป็น NULL ไม่ใช่สตริงว่าง — สองอย่างนี้
+// ต่างกันเวลาไปค้นหรือส่งเมล
+func (r *Repo) UpdateProfile(ctx context.Context, userID, fullName, email, actor string) error {
+	const q = `
+UPDATE dbo.tb_users
+   SET full_name = NULLIF(@p2, N''),
+       email     = NULLIF(@p3, N''),
+       update_by = @p4
+ WHERE user_id = @p1 AND is_delete = 0`
+
+	res, err := r.db.Exec().ExecContext(ctx, q, userID, fullName, email, actor)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}

@@ -35,6 +35,7 @@ func (h *Handler) Register(api fiber.Router) {
 	g.Post("/login", h.login)
 	g.Post("/refresh", h.refresh)
 	g.Get("/me", h.me)
+	g.Put("/me", h.updateMe)
 	g.Post("/change-password", h.changePassword)
 	g.Post("/logout", h.logout)
 
@@ -137,4 +138,25 @@ func (h *Handler) unlock(c fiber.Ctx) error {
 		return err
 	}
 	return httpx.OK(c, "ปลดล็อกบัญชีเรียบร้อย", nil)
+}
+
+// updateMe ให้เจ้าของบัญชีแก้ชื่อและอีเมลของตัวเอง
+//
+// ไม่ต้องมีตัวกรองสิทธิ์ เพราะขอบเขตคือแถวของผู้เรียกเองเสมอ — user_id มาจาก token
+// ไม่ได้มาจาก path หรือ body การแก้ผู้ใช้คนอื่นต้องไปที่ PUT /users/{id} ซึ่งเป็น
+// งานของ ADMIN และยังไม่มี
+func (h *Handler) updateMe(c fiber.Ctx) error {
+	var req ProfileUpdate
+	if err := c.Bind().Body(&req); err != nil {
+		return httpx.Validation("request body ไม่ถูกต้อง")
+	}
+
+	ctx, cancel := context.WithTimeout(c, repository.TimeoutWrite)
+	defer cancel()
+
+	info, err := h.svc.UpdateProfile(ctx, mw.UserID(c), mw.Username(c), req)
+	if err != nil {
+		return err
+	}
+	return httpx.OK(c, "บันทึกข้อมูลผู้ใช้เรียบร้อย", info)
 }

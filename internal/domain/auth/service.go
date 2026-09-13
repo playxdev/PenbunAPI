@@ -16,6 +16,7 @@ import (
 	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
+	"penbun/api/internal/repository"
 )
 
 type Service struct {
@@ -173,6 +174,45 @@ func toPermissions(perms map[string]authz.Access) map[string]ResourceAccess {
 	return out
 }
 
+// ProfileUpdate คือสิ่งที่เจ้าของบัญชีแก้ของตัวเองได้
+type ProfileUpdate struct {
+	FullName string `json:"full_name"`
+	Email    string `json:"email"`
+}
+
+// UpdateProfile แก้ชื่อและอีเมลของผู้เรียกเอง แล้วคืนโปรไฟล์ที่อ่านกลับมาจากฐาน
+//
+// คืนค่าที่อ่านกลับ ไม่ใช่ค่าที่รับเข้ามา เพราะ NULLIF และทริกเกอร์ของตารางอาจ
+// ทำให้สิ่งที่เก็บจริงต่างจากสิ่งที่ส่งมา หน้าจอจะได้ไม่โชว์ค่าที่ไม่ได้อยู่ในฐาน
+//
+// ความยาวตรงกับคอลัมน์ของ tb_users — full_name 150, email 100 ถ้ากว้างกว่านี้
+// validation จะปล่อยผ่านแล้วไปตายตอน UPDATE ซึ่งกลายเป็น 500 ทั้งที่เป็นคำขอที่ผิด
+func (s *Service) UpdateProfile(ctx context.Context, userID, actor string, in ProfileUpdate) (*UserInfo, error) {
+	name := strings.TrimSpace(in.FullName)
+	mail := strings.TrimSpace(in.Email)
+
+	if len([]rune(name)) > 150 {
+		return nil, httpx.Validation("ชื่อ-สกุลยาวเกิน 150 ตัวอักษร").
+			WithField("full_name", httpx.CodeValidationFailed, "")
+	}
+	if len([]rune(mail)) > 100 {
+		return nil, httpx.Validation("อีเมลยาวเกิน 100 ตัวอักษร").
+			WithField("email", httpx.CodeValidationFailed, "")
+	}
+	if mail != "" && !strings.Contains(mail, "@") {
+		return nil, httpx.Validation("รูปแบบอีเมลไม่ถูกต้อง").
+			WithField("email", httpx.CodeValidationFailed, "")
+	}
+
+	if err := s.repo.UpdateProfile(ctx, userID, name, mail, actor); err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, httpx.NotFound("ไม่พบข้อมูลผู้ใช้")
+		}
+		return nil, err
+	}
+	return s.Me(ctx, userID)
+}
+
 func (s *Service) ChangePassword(ctx context.Context, userID, current, next string) (*TokenPair, error) {
 	if err := validatePasswordPolicy(next); err != nil {
 		return nil, err
@@ -276,7 +316,9 @@ func toUserInfo(u *User) *UserInfo {
 		info.Email = &u.Email.String
 	}
 	if u.LastLogin.Valid {
-		s := u.LastLogin.Time.Format(time.RFC3339)
+		// เวลาที่เก็บใน tb_users เป็นเวลาไทยอยู่แล้ว ต้องติดโซนก่อนส่งออก
+		// ไม่งั้นหน้าจอจะแสดงเวลาเข้าใช้ล่าสุดเร็วไปเจ็ดชั่วโมง ข้ามไปเป็นวันถัดไปได้
+		s := repository.InBangkok(u.LastLogin.Time).Format(time.RFC3339)
 		info.LastLoginDate = &s
 	}
 	return info

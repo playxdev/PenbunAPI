@@ -3,6 +3,7 @@ package auth
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"penbun/api/internal/platform/authz"
@@ -45,5 +46,25 @@ func TestToPermissionsEmptyMarshalsAsObject(t *testing.T) {
 	}
 	if string(b) != `{"permissions":{}}` {
 		t.Errorf("ต้องได้ {} ได้ %s", b)
+	}
+}
+
+// การแก้โปรไฟล์ต้องปฏิเสธก่อนแตะฐาน ไม่ใช่ปล่อยไปตายตอน UPDATE
+// ความยาวที่เกินคอลัมน์เป็น 400 ไม่ใช่ 500 เพราะเป็นคำขอที่ผิด ไม่ใช่ระบบพัง
+func TestUpdateProfileRefusesBadInputBeforeTouchingTheDatabase(t *testing.T) {
+	// repo เป็น nil โดยตั้งใจ — เคสที่ผ่าน validation จะ panic ซึ่งแปลว่าเทสต์ผิด
+	s := &Service{}
+
+	cases := map[string]ProfileUpdate{
+		"ชื่อยาวเกินคอลัมน์":  {FullName: strings.Repeat("ก", 151)},
+		"อีเมลยาวเกินคอลัมน์": {Email: strings.Repeat("a", 95) + "@x.com"},
+		"อีเมลไม่มี @":        {Email: "not-an-email"},
+	}
+	for name, in := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := s.UpdateProfile(t.Context(), "USRA000001", "tester", in); err == nil {
+				t.Fatal("ต้องถูกปฏิเสธ")
+			}
+		})
 	}
 }
