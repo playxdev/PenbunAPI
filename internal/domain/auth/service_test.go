@@ -4,15 +4,17 @@ package auth
 import (
 	"encoding/json"
 	"testing"
+
+	"penbun/api/internal/platform/authz"
 )
 
 // สิทธิ์ที่ออกไปหน้าจอต้องตรงกับแถวที่ฐานคืนมาทุกช่อง ไม่ใช่แค่ "มีสิทธิ์/ไม่มี"
 // ถ้าสี่ช่องนี้เพี้ยน หน้าจอจะโชว์ปุ่มที่กดแล้วได้ 403 ซึ่งเป็นปัญหาเดิมที่
 // /meta/permissions ถูกสร้างขึ้นมาแก้
 func TestToPermissionsKeepsEveryAction(t *testing.T) {
-	got := toPermissions([]Privilege{
-		{Resource: "customer", View: true},
-		{Resource: "order", View: true, Insert: true, Update: true, Delete: true},
+	got := toPermissions(map[string]authz.Access{
+		"customer": {View: true},
+		"order":    {View: true, Insert: true, Update: true, Delete: true},
 	})
 
 	if len(got) != 2 {
@@ -29,7 +31,7 @@ func TestToPermissionsKeepsEveryAction(t *testing.T) {
 // resource ที่ไม่มีแถวสิทธิ์คือ "ไม่มีสิทธิ์" ไม่ใช่ "มีสิทธิ์ทุกอย่าง"
 // ฝั่งเว็บอ่านแผนที่นี้ด้วยการถามชื่อ resource ตรง ๆ ค่าที่หายไปจึงต้องเป็นศูนย์ทั้งสี่ช่อง
 func TestToPermissionsMissingResourceIsNoAccess(t *testing.T) {
-	got := toPermissions([]Privilege{{Resource: "customer", View: true}})
+	got := toPermissions(map[string]authz.Access{"customer": {View: true}})
 	if a := got["users"]; a.View || a.Insert || a.Update || a.Delete {
 		t.Errorf("resource ที่ไม่มีแถวต้องไม่มีสิทธิ์เลย ได้ %+v", a)
 	}

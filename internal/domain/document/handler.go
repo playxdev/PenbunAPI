@@ -13,6 +13,7 @@ import (
 
 	"penbun/api/internal/config"
 	"penbun/api/internal/crud"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -48,15 +49,20 @@ func (e *Engine) Mount(router fiber.Router, s *Spec) error {
 	}
 	g := router.Group("/" + s.Name)
 
-	g.Get("", e.list(s))
-	g.Get("/:id", e.get(s))
-	g.Post("", e.create(s))
-	g.Put("/:id", e.updateHeader(s))
-	g.Put("/:id/items", e.replaceItems(s))
-	g.Put("/:id/confirm", e.confirm(s))
-	g.Put("/:id/post", e.post(s))
-	g.Put("/:id/cancel", e.cancel(s))
-	g.Delete("/:id", e.softDelete(s))
+	// ตัวกรองอ่านการกระทำจาก HTTP method
+	// PUT .../confirm .../post .../cancel จึงนับเป็น update เหมือน PUT ตัวอื่น
+	// ซึ่งถูกต้อง — ทั้งสามเปลี่ยนสถานะของเอกสารที่มีอยู่แล้ว ไม่ได้สร้างของใหม่
+	guard := authz.GuardResource(e.crud.Authz, s.Name)
+
+	g.Get("", guard, e.list(s))
+	g.Get("/:id", guard, e.get(s))
+	g.Post("", guard, e.create(s))
+	g.Put("/:id", guard, e.updateHeader(s))
+	g.Put("/:id/items", guard, e.replaceItems(s))
+	g.Put("/:id/confirm", guard, e.confirm(s))
+	g.Put("/:id/post", guard, e.post(s))
+	g.Put("/:id/cancel", guard, e.cancel(s))
+	g.Delete("/:id", guard, e.softDelete(s))
 	return nil
 }
 

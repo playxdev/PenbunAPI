@@ -10,11 +10,9 @@ import "penbun/api/internal/crud"
 //
 // เพิ่ม resource ใหม่ = เขียน descriptor แล้วต่อท้ายรายการนี้
 //
-// นโยบายสิทธิ์ของชั้นนี้: ทุกคนที่ login อ่านข้อมูลหลักได้ เพราะหน้าจอเอกสาร
-// ต้องเลือกลูกค้า สินค้า และคลังจากตารางพวกนี้ แต่การแก้ไขข้อมูลหลักเป็นงาน
-// ของ ADMIN — descriptor ที่เขียนได้จึงตั้ง RequireLevelWrite ไว้ทุกตัว
-var adminWrite = []string{"ADMIN"}
-
+// สิทธิ์ไม่ได้อยู่ใน descriptor แล้วตั้งแต่ย้ายไป tb_privilege — descriptor บอกแค่ว่า
+// resource ชื่ออะไรและมีคอลัมน์อะไร ส่วนใครทำอะไรได้อยู่ในฐาน อ่านผ่าน
+// vw_user_privilege และบังคับโดย authz.GuardResource ตอน mount
 func All() []*crud.Resource {
 	return []*crud.Resource{
 		// ชั้นระบบ — อ่านอย่างเดียว และเฉพาะ ADMIN

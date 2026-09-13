@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"penbun/api/internal/crud"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -27,17 +28,18 @@ type Handler struct {
 	db       *repository.DB
 	resolver *repository.Resolver
 	crud     *crud.Engine
+	authz    *authz.Repo
 }
 
-func NewHandler(db *repository.DB, res *repository.Resolver, ce *crud.Engine) *Handler {
-	return &Handler{db: db, resolver: res, crud: ce}
+func NewHandler(db *repository.DB, res *repository.Resolver, ce *crud.Engine, az *authz.Repo) *Handler {
+	return &Handler{db: db, resolver: res, crud: ce, authz: az}
 }
 
 // หนังสือเป็นข้อมูลหลัก ไม่ใช่งานประจำวัน การเขียนจึงจำกัดไว้ที่ ADMIN
-// เท่ากับ descriptor ตัวอื่นในชั้นเดียวกันที่ตั้ง RequireLevelWrite ไว้
+// สิทธิ์อ่านจาก tb_privilege เหมือน resource ตัวอื่น ชื่อ "book" ตัวเดียวกัน
 // ตัวกรองอยู่บนกลุ่ม เส้นทางที่เพิ่มทีหลังจะได้ไม่หลุด
 func (h *Handler) Register(api fiber.Router) {
-	g := api.Group("/book", mw.RequireLevel("ADMIN"))
+	g := api.Group("/book", authz.GuardResource(h.authz, "book"))
 	g.Post("", h.create)
 	g.Put("/:id", h.update)
 	g.Delete("/:id", h.softDelete)

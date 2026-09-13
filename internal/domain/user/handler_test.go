@@ -68,7 +68,7 @@ func TestLevelIsUppercasedAndChecked(t *testing.T) {
 }
 
 // บทบาทที่ผูกให้ต้องเป็นค่าเดียวกับที่เขียนลงคอลัมน์ user_level ไม่ใช่ค่าดิบจาก request
-// ถ้าสองค่านี้หลุดจากกัน ผู้ใช้จะได้สิทธิ์ของบทบาทหนึ่งแต่ถูก mw.RequireLevel
+// ถ้าสองค่านี้หลุดจากกัน ผู้ใช้จะได้สิทธิ์ของบทบาทหนึ่งแต่ถูกตัวกรองบนเส้นทาง
 // ตัดสินด้วยอีกบทบาทหนึ่ง
 func TestRoleFollowsTheLevelThatWasWritten(t *testing.T) {
 	req := ok()

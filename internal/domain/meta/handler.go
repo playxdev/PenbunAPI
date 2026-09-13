@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"penbun/api/internal/crud"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -29,14 +30,17 @@ type Handler struct {
 	// /meta/permissions อ่านสิทธิ์จากตรงนี้ ไม่ได้เขียนรายการซ้ำไว้ต่างหาก
 	resources []*crud.Resource
 
+	// authz คือแหล่งเดียวกับที่ตัวกรองบนเส้นทางใช้ตัดสิน
+	authz *authz.Repo
+
 	mu       sync.RWMutex
 	cached   map[string][]string
 	cachedAt time.Time
 	ttl      time.Duration
 }
 
-func NewHandler(db *repository.DB, res []*crud.Resource) *Handler {
-	return &Handler{db: db, resources: res, ttl: 10 * time.Minute}
+func NewHandler(db *repository.DB, res []*crud.Resource, az *authz.Repo) *Handler {
+	return &Handler{db: db, resources: res, authz: az, ttl: 10 * time.Minute}
 }
 
 func (h *Handler) Register(api fiber.Router) {
@@ -58,42 +62,41 @@ type Permissions struct {
 
 // permissions บอกหน้าจอว่าผู้ใช้คนนี้อ่านและเขียน resource ไหนได้บ้าง
 //
-// คำนวณจาก descriptor ชุดเดียวกับที่ติดตั้งเส้นทางจริง ไม่ใช่รายการที่เขียนซ้ำ
-// ด้วยเหตุผลเดียวกับ /meta/enums: สำเนาที่สองจะค่อย ๆ ต่างจากของจริง แล้วหน้าจอ
-// จะโชว์ปุ่มที่กดแล้วได้ 403 หรือซ่อนปุ่มที่กดได้จริง
+// อ่านจาก vw_user_privilege ซึ่งเป็นแหล่งเดียวกับที่ authz.GuardResource ใช้ตัดสินจริง
+// คำตอบของ endpoint นี้จึงตรงกับสิ่งที่เส้นทางจะทำเสมอ ไม่ใช่สำเนาที่ค่อย ๆ เพี้ยน
 //
-// นี่ไม่ใช่การตรวจสิทธิ์ ตัวที่ตรวจจริงคือ mw.RequireLevel บนเส้นทางแต่ละเส้น
+// รายชื่อ resource มาจาก descriptor ชุดที่ mount จริง ไม่ใช่จากแถวที่บังเอิญมีในฐาน
+// resource ที่ไม่มีแถวสิทธิ์เลยจึงยังปรากฏในคำตอบ เป็น read:false write:false
+// หน้าจอจะได้รู้ว่ามันมีอยู่แต่เข้าไม่ได้ แทนที่จะหาคีย์ไม่เจอแล้วเดาเอง
+//
+// นี่ไม่ใช่การตรวจสิทธิ์ ตัวที่ตรวจจริงคือ authz.GuardResource บนกลุ่มของแต่ละ resource
 // endpoint นี้แค่ทำให้หน้าจอพูดตรงกับเส้นทางเหล่านั้น
 func (h *Handler) permissions(c fiber.Ctx) error {
-	return httpx.OK(c, "สิทธิ์ของผู้ใช้", buildPermissions(h.resources, mw.UserLevel(c)))
+	ctx, cancel := context.WithTimeout(c, repository.TimeoutLookup)
+	defer cancel()
+
+	perms, err := h.authz.For(ctx, mw.UserID(c))
+	if err != nil {
+		return err
+	}
+	return httpx.OK(c, "สิทธิ์ของผู้ใช้", buildPermissions(h.resources, mw.UserLevel(c), perms))
 }
 
 // buildPermissions แยกออกมาจาก handler เพื่อให้ทดสอบได้โดยไม่ต้องมี request
-func buildPermissions(res []*crud.Resource, level string) Permissions {
+//
+// write เป็นจริงเมื่อทำอย่างใดอย่างหนึ่งใน insert / update / delete ได้
+// เพราะรูปแบบ read/write ของ endpoint นี้หยาบกว่าสี่การกระทำที่ฐานเก็บ
+// หน้าจอที่ต้องการความละเอียดเต็มให้อ่าน permissions จาก GET /auth/me แทน
+func buildPermissions(res []*crud.Resource, level string, perms map[string]authz.Access) Permissions {
 	out := make(map[string]Access, len(res))
 	for _, r := range res {
+		a := perms[r.Name]
 		out[r.Name] = Access{
-			Read: allows(r.RequireLevel, level),
-			// resource ที่ไม่ประกาศ RequireLevelWrite เลยคือเขียนไม่ได้เลย
-			// ไม่ใช่ "เขียนได้ทุกระดับ" — descriptor ที่เขียนได้ต้องประกาศเสมอ
-			// (บังคับโดย crud.Resource.Validate) ที่เหลือคืออ่านอย่างเดียวจริง ๆ
-			Write: len(r.RequireLevelWrite) > 0 && allows(r.RequireLevelWrite, level),
+			Read:  a.View,
+			Write: a.Insert || a.Update || a.Delete,
 		}
 	}
 	return Permissions{Level: level, Resources: out}
-}
-
-// allows ตีความแบบเดียวกับ mw.RequireLevel — รายการว่างคือไม่จำกัด
-func allows(levels []string, level string) bool {
-	if len(levels) == 0 {
-		return true
-	}
-	for _, l := range levels {
-		if l == level {
-			return true
-		}
-	}
-	return false
 }
 
 func (h *Handler) enums(c fiber.Ctx) error {

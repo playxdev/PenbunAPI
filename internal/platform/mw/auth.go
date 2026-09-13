@@ -150,21 +150,6 @@ func RequirePasswordChanged() fiber.Handler {
 	}
 }
 
-// RequireLevel จำกัดสิทธิ์ตาม tb_users.user_level
-// 4.0 รองรับแค่ ADMIN / USER เพราะ DB v7 ยังไม่มี tb_role
-func RequireLevel(levels ...string) fiber.Handler {
-	allowed := make(map[string]bool, len(levels))
-	for _, l := range levels {
-		allowed[l] = true
-	}
-	return func(c fiber.Ctx) error {
-		if !allowed[UserLevel(c)] {
-			return httpx.Forbidden(httpx.CodeForbidden, "สิทธิ์ของคุณไม่เพียงพอสำหรับการดำเนินการนี้")
-		}
-		return c.Next()
-	}
-}
-
 // ParseRefresh ใช้ตอนขอ token ใหม่ — token มาใน body ไม่ใช่ header
 func (a *Authenticator) ParseRefresh(token string) (*Claims, error) {
 	claims, err := a.parse(token)

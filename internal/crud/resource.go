@@ -37,23 +37,6 @@ type Resource struct {
 
 	ReadOnly bool // true = mount เฉพาะ GET
 
-	// RequireLevel จำกัดทุก endpoint ของ resource นี้ไว้ที่ user_level ที่ระบุ
-	// ว่างไว้ = ผู้ใช้ที่ login แล้วทุกคนเข้าได้ ซึ่งเป็นค่าปกติของการอ่าน master data
-	// resource ที่คืนข้อมูลของคนอื่น เช่น ผู้ใช้งาน ต้องระบุเสมอ
-	RequireLevel []string
-
-	// RequireLevelWrite จำกัดเฉพาะ POST / PUT / DELETE ไว้ที่ user_level ที่ระบุ
-	// แยกจาก RequireLevel เพราะ master data ต้องให้ทุกคนที่ login อ่านได้
-	// (หน้าจอเอกสารเลือกลูกค้าและสินค้าจากตารางพวกนี้) แต่การแก้ไขข้อมูลหลัก
-	// ไม่ใช่งานประจำวันของผู้ใช้ทั่วไป
-	//
-	// resource ที่เขียนได้ต้องระบุเสมอ Validate ทำให้ process ไม่ start ถ้าลืม
-	// resource ที่เพิ่มใหม่จึงไม่มีทางหลุดออกไปเปิดให้ทุกคนที่ login เขียนได้
-	//
-	// resource ที่เป็น ReadOnly ประกาศได้เหมือนกัน และแปลว่า "การเขียนมีอยู่จริง
-	// แต่อยู่ใน domain package ไม่ใช่ที่ engine กลาง" — book เป็นกรณีนั้น
-	// /meta/permissions อ่านฟิลด์นี้เป็นคำตอบว่า resource ไหนแก้ไขได้
-	RequireLevelWrite []string
 }
 
 func (r *Resource) field(name string) (schema.Field, bool) {
@@ -116,9 +99,6 @@ func (r *Resource) Validate() error {
 			if f.Column == "" {
 				return fmt.Errorf("resource %s: filter %q needs Column", r.Name, f.Param)
 			}
-		}
-		if len(r.RequireLevelWrite) == 0 {
-			return fmt.Errorf("resource %s: RequireLevelWrite is required when the resource is writable", r.Name)
 		}
 	}
 	return nil

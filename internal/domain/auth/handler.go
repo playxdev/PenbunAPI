@@ -6,18 +6,20 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
 )
 
 type Handler struct {
-	svc  *Service
-	auth *mw.Authenticator
+	svc   *Service
+	auth  *mw.Authenticator
+	authz *authz.Repo
 }
 
-func NewHandler(svc *Service, a *mw.Authenticator) *Handler {
-	return &Handler{svc: svc, auth: a}
+func NewHandler(svc *Service, a *mw.Authenticator, az *authz.Repo) *Handler {
+	return &Handler{svc: svc, auth: a, authz: az}
 }
 
 // Register ติดตั้งเส้นทางทั้งหมดของ auth ลงบนกลุ่ม /api/v2
@@ -36,7 +38,7 @@ func (h *Handler) Register(api fiber.Router) {
 	g.Post("/change-password", h.changePassword)
 	g.Post("/logout", h.logout)
 
-	api.Put("/users/:id/unlock", mw.RequireLevel("ADMIN"), h.unlock)
+	api.Put("/users/:id/unlock", authz.Guard(h.authz, "users", authz.Update), h.unlock)
 }
 
 type loginRequest struct {

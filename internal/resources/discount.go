@@ -33,8 +33,6 @@ var DiscountGroup = &crud.Resource{
 		{Name: "group_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อกลุ่ม"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
-
-	RequireLevelWrite: adminWrite,
 }
 
 // ruleScopes ต้องตรงกับ CK_tb_price_rule_scope ใน PenbunSQL v9
@@ -91,6 +89,4 @@ var PriceRule = &crud.Resource{
 		{Name: "end_date", Kind: schema.KindDate, Label: "วันที่สิ้นสุด"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
-
-	RequireLevelWrite: adminWrite,
 }

@@ -28,6 +28,7 @@ import (
 	"penbun/api/internal/domain/meta"
 	"penbun/api/internal/domain/stock"
 	"penbun/api/internal/domain/user"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/logx"
 	"penbun/api/internal/platform/mw"
@@ -85,10 +86,14 @@ func run() error {
 	// การลงทะเบียน เพื่อไม่ให้เส้นทางหลุดเป็นสาธารณะโดยบังเอิญเมื่อมีคนสลับบรรทัด
 	api := app.Group("/api/v2", authn.Protect(), mw.RequirePasswordChanged())
 
-	crudEngine := crud.NewEngine(db, resolver)
+	// authzRepo คือแหล่งความจริงเรื่องสิทธิ์ของทั้งกระบวนการ ตัวเดียว ส่งต่อให้ทุกชั้น
+	// ที่ต้องตัดสินหรือรายงานสิทธิ์ จะได้ไม่มีใครไปเปิดทางอ่านของตัวเอง
+	authzRepo := authz.NewRepo(db)
+
+	crudEngine := crud.NewEngine(db, resolver, authzRepo)
 	docEngine := document.NewEngine(db, resolver, crudEngine, cfg)
 
-	auth.NewHandler(auth.NewService(auth.NewRepo(db), cfg, authn.Store), authn).Register(api)
+	auth.NewHandler(auth.NewService(auth.NewRepo(db), cfg, authn.Store, authzRepo), authn, authzRepo).Register(api)
 
 	if err := crudEngine.MountAll(api, resources.All()); err != nil {
 		return err
@@ -97,11 +102,11 @@ func run() error {
 		return err
 	}
 
-	book.NewHandler(db, resolver, crudEngine).Register(api)
-	user.NewHandler(db, resolver, crudEngine, cfg).Register(api)
-	stock.NewHandler(stock.NewRepo(db), db, resolver, cfg).Register(api)
-	allocation.NewHandler(db, resolver).Register(api)
-	meta.NewHandler(db, resources.All()).Register(api)
+	book.NewHandler(db, resolver, crudEngine, authzRepo).Register(api)
+	user.NewHandler(db, resolver, crudEngine, cfg, authzRepo).Register(api)
+	stock.NewHandler(stock.NewRepo(db), db, resolver, cfg, authzRepo).Register(api)
+	allocation.NewHandler(db, resolver, authzRepo).Register(api)
+	meta.NewHandler(db, resources.All(), authzRepo).Register(api)
 
 	return serve(app, cfg, lg)
 }

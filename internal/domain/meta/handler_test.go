@@ -7,39 +7,41 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"penbun/api/internal/crud"
+	"penbun/api/internal/platform/authz"
 )
 
-// รายการว่างของ mw.RequireLevel แปลว่าไม่จำกัด ที่นี่ต้องตีความเหมือนกัน
-// ถ้าต่างกัน หน้าจอจะซ่อนสิ่งที่ API ยอมให้ทำ หรือโชว์สิ่งที่ API ปฏิเสธ
-func TestAllowsMatchesRequireLevel(t *testing.T) {
-	assert.True(t, allows(nil, "USER"))
-	assert.True(t, allows([]string{}, "USER"))
-	assert.True(t, allows([]string{"ADMIN"}, "ADMIN"))
-	assert.False(t, allows([]string{"ADMIN"}, "USER"))
-	assert.True(t, allows([]string{"ADMIN", "USER"}, "USER"))
-	assert.False(t, allows([]string{"ADMIN"}, ""))
-}
+// คำตอบของ /meta/permissions ต้องมาจากสิทธิ์ในฐาน ไม่ใช่จาก descriptor
+//
+// รูปแบบ read/write ของ endpoint นี้หยาบกว่าสี่การกระทำที่ฐานเก็บ write จึงเป็นจริง
+// เมื่อทำได้อย่างน้อยหนึ่งใน insert / update / delete
+func TestBuildPermissionsReadsFromTheDatabase(t *testing.T) {
+	res := []*crud.Resource{{Name: "customer"}, {Name: "users"}, {Name: "book"}}
 
-func TestBuildPermissions(t *testing.T) {
-	res := []*crud.Resource{
-		// ข้อมูลหลักทั่วไป — ทุกคนอ่านได้ ADMIN เขียนได้
-		{Name: "customer", RequireLevelWrite: []string{"ADMIN"}},
-		// ผู้ใช้งาน — ADMIN เท่านั้นที่อ่านได้ และเขียนผ่าน engine กลางไม่ได้เลย
-		{Name: "users", ReadOnly: true, RequireLevel: []string{"ADMIN"}},
-		// หนังสือ — engine กลางอ่านอย่างเดียว แต่การเขียนมีจริงที่ domain/book
-		{Name: "book", ReadOnly: true, RequireLevelWrite: []string{"ADMIN"}},
-	}
-
-	admin := buildPermissions(res, "ADMIN")
+	admin := buildPermissions(res, "ADMIN", map[string]authz.Access{
+		"customer": {View: true, Insert: true, Update: true, Delete: true},
+		"users":    {View: true, Insert: true, Update: true, Delete: true},
+		"book":     {View: true, Insert: true, Update: true, Delete: true},
+	})
 	assert.Equal(t, "ADMIN", admin.Level)
 	assert.Equal(t, Access{Read: true, Write: true}, admin.Resources["customer"])
-	assert.Equal(t, Access{Read: true, Write: false}, admin.Resources["users"])
-	assert.Equal(t, Access{Read: true, Write: true}, admin.Resources["book"])
+	assert.Equal(t, Access{Read: true, Write: true}, admin.Resources["users"])
 
-	user := buildPermissions(res, "USER")
+	user := buildPermissions(res, "USER", map[string]authz.Access{
+		"customer": {View: true},
+		"book":     {View: true},
+	})
 	assert.Equal(t, "USER", user.Level)
 	assert.Equal(t, Access{Read: true, Write: false}, user.Resources["customer"],
 		"USER ต้องอ่านข้อมูลหลักได้ หน้าจอเอกสารเลือกลูกค้าจากตารางนี้")
-	assert.Equal(t, Access{Read: false, Write: false}, user.Resources["users"])
 	assert.Equal(t, Access{Read: true, Write: false}, user.Resources["book"])
+}
+
+// resource ที่ไม่มีแถวสิทธิ์เลยต้องยังปรากฏในคำตอบ เป็น false ทั้งคู่
+//
+// ถ้าปล่อยให้คีย์หายไป หน้าจอจะแยกไม่ออกระหว่าง "เข้าไม่ได้" กับ "ไม่มี resource นี้"
+// แล้วจะไปเดาเอาเองว่าอย่างไหน ซึ่งเดาผิดได้ทั้งสองทาง
+func TestBuildPermissionsKeepsResourcesWithNoGrant(t *testing.T) {
+	got := buildPermissions([]*crud.Resource{{Name: "users"}}, "USER", map[string]authz.Access{})
+	assert.Contains(t, got.Resources, "users")
+	assert.Equal(t, Access{Read: false, Write: false}, got.Resources["users"])
 }

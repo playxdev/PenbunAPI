@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"penbun/api/internal/config"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 )
@@ -21,10 +22,11 @@ type Service struct {
 	repo  *Repo
 	cfg   *config.Config
 	store mw.TokenStore
+	authz *authz.Repo
 }
 
-func NewService(repo *Repo, cfg *config.Config, store mw.TokenStore) *Service {
-	return &Service{repo: repo, cfg: cfg, store: store}
+func NewService(repo *Repo, cfg *config.Config, store mw.TokenStore, az *authz.Repo) *Service {
+	return &Service{repo: repo, cfg: cfg, store: store, authz: az}
 }
 
 type TokenPair struct {
@@ -47,7 +49,7 @@ type UserInfo struct {
 	// Permissions คือสิทธิ์ที่ฐานข้อมูลบอกว่าผู้ใช้คนนี้มี คีย์คือชื่อ resource
 	// เดียวกับ crud.Resource.Name ค่าคือสี่การกระทำของ tb_privilege
 	//
-	// ยังไม่ใช่ตัวที่บังคับสิทธิ์ ตัวที่บังคับคือ mw.RequireLevel บนเส้นทางแต่ละเส้น
+	// ตัวที่บังคับจริงคือ authz.GuardResource บนเส้นทางแต่ละเส้น ซึ่งอ่านแหล่งเดียวกัน
 	// ซึ่งยังอ่าน user_level อยู่ ที่นี่คือการเปิดทางให้หน้าจอเริ่มอ่านจากแหล่งเดียว
 	// กับที่จะบังคับจริงในอนาคต ก่อนจะสลับตัวบังคับ
 	Permissions map[string]ResourceAccess `json:"permissions"`
@@ -141,10 +143,12 @@ func (s *Service) Me(ctx context.Context, userID string) (*UserInfo, error) {
 		return nil, err
 	}
 
+	// อ่านจากชั้นเดียวกับที่ตัวกรองบนเส้นทางใช้ตัดสิน คำตอบจึงตรงกันเสมอ
+	//
 	// ปล่อยให้ error ขึ้นไปตามปกติ ไม่กลืนแล้วคืนรายการว่าง
 	// ฐานที่ยังเป็น v11 จะไม่มี vw_user_privilege และต้องรู้ตัวตั้งแต่คำขอแรก
 	// ไม่ใช่ค่อยมางงว่าทำไมทุกคนไม่มีสิทธิ์อะไรเลย
-	privs, err := s.repo.PrivilegesFor(ctx, user.UserID)
+	privs, err := s.authz.For(ctx, user.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,16 +158,16 @@ func (s *Service) Me(ctx context.Context, userID string) (*UserInfo, error) {
 	return info, nil
 }
 
-// toPermissions แปลงแถวจากฐานเป็นแผนที่ที่หน้าจอใช้ได้ตรง ๆ
+// toPermissions แปลงสิทธิ์จากชั้น authz เป็นรูปที่ส่งออกทาง JSON
 // แยกออกมาจาก Me เพื่อให้ทดสอบได้โดยไม่ต้องมีฐานข้อมูล
 //
 // คืนแผนที่ว่าง ไม่ใช่ nil เมื่อไม่มีสิทธิ์เลย — JSON จะได้เป็น {} ไม่ใช่ null
 // หน้าจอจึงวนลูปได้โดยไม่ต้องเช็ค null ก่อนทุกครั้ง
-func toPermissions(rows []Privilege) map[string]ResourceAccess {
-	out := make(map[string]ResourceAccess, len(rows))
-	for _, p := range rows {
-		out[p.Resource] = ResourceAccess{
-			View: p.View, Insert: p.Insert, Update: p.Update, Delete: p.Delete,
+func toPermissions(perms map[string]authz.Access) map[string]ResourceAccess {
+	out := make(map[string]ResourceAccess, len(perms))
+	for name, a := range perms {
+		out[name] = ResourceAccess{
+			View: a.View, Insert: a.Insert, Update: a.Update, Delete: a.Delete,
 		}
 	}
 	return out

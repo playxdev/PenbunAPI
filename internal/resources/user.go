@@ -36,6 +36,5 @@ var User = &crud.Resource{
 		{Param: "warehouse_id", Column: "warehouse_id", Kind: schema.KindString},
 		{Param: "status_user_locked", Column: "status_user_locked", Kind: schema.KindBool},
 	},
-	ReadOnly:     true,
-	RequireLevel: []string{"ADMIN"},
+	ReadOnly: true,
 }

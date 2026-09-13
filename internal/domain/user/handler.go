@@ -15,6 +15,7 @@ import (
 	"penbun/api/internal/config"
 	"penbun/api/internal/crud"
 	"penbun/api/internal/domain/auth"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -32,17 +33,18 @@ type Handler struct {
 	resolver *repository.Resolver
 	crud     *crud.Engine
 	cfg      *config.Config
+	authz    *authz.Repo
 }
 
-func NewHandler(db *repository.DB, res *repository.Resolver, ce *crud.Engine, cfg *config.Config) *Handler {
-	return &Handler{db: db, resolver: res, crud: ce, cfg: cfg}
+func NewHandler(db *repository.DB, res *repository.Resolver, ce *crud.Engine, cfg *config.Config, az *authz.Repo) *Handler {
+	return &Handler{db: db, resolver: res, crud: ce, cfg: cfg, authz: az}
 }
 
 // Register ต่อท้ายกลุ่ม /users ที่ crud engine ติดตั้งไว้แล้ว
-// ตัวกรอง RequireLevel("ADMIN") ของกลุ่มนั้นครอบเส้นทางนี้ด้วย และยังใส่ซ้ำตรงนี้
+// ตัวกรองสิทธิ์ของกลุ่มนั้นครอบเส้นทางนี้ด้วย และยังใส่ซ้ำตรงนี้
 // เพื่อให้อ่านโค้ดแล้วเห็นสิทธิ์ที่ต้องใช้โดยไม่ต้องไปเปิด descriptor
 func (h *Handler) Register(api fiber.Router) {
-	api.Post("/users", mw.RequireLevel("ADMIN"), h.create)
+	api.Post("/users", authz.Guard(h.authz, "users", authz.Insert), h.create)
 }
 
 // levels คือค่าที่ tb_users.user_level รับได้จริงในรุ่นนี้

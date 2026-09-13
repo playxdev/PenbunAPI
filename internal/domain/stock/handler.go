@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"penbun/api/internal/config"
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -20,26 +21,27 @@ type Handler struct {
 	db       *repository.DB
 	resolver *repository.Resolver
 	cfg      *config.Config
+	authz    *authz.Repo
 }
 
-func NewHandler(repo *Repo, db *repository.DB, res *repository.Resolver, cfg *config.Config) *Handler {
-	return &Handler{repo: repo, db: db, resolver: res, cfg: cfg}
+func NewHandler(repo *Repo, db *repository.DB, res *repository.Resolver, cfg *config.Config, az *authz.Repo) *Handler {
+	return &Handler{repo: repo, db: db, resolver: res, cfg: cfg, authz: az}
 }
 
 func (h *Handler) Register(api fiber.Router) {
-	g := api.Group("/stock")
+	// การปรับและย้ายสต็อกด้วยมือเป็น insert ของ resource "stock"
+	// รายการเหล่านี้ไม่มีเอกสารรองรับ จึงตรวจสอบย้อนหลังได้ยากกว่าการโพสต์เอกสาร
+	// สิทธิ์ insert ของ stock จึงถูก seed ไว้ให้เฉพาะ ADMIN
+	g := api.Group("/stock", authz.GuardResource(h.authz, "stock"))
 	g.Get("/onhand", h.onHand)
 	g.Get("/movements", h.movements)
+	g.Post("/adjust", h.adjust)
+	g.Post("/transfer", h.transfer)
+	g.Post("/rebuild", h.rebuild)
 
-	// การปรับและย้ายสต็อกด้วยมือจำกัดที่ ADMIN
-	// รายการเหล่านี้ไม่มีเอกสารรองรับ จึงตรวจสอบย้อนหลังได้ยากกว่าการโพสต์เอกสาร
-	g.Post("/adjust", mw.RequireLevel("ADMIN"), h.adjust)
-	g.Post("/transfer", mw.RequireLevel("ADMIN"), h.transfer)
-	g.Post("/rebuild", mw.RequireLevel("ADMIN"), h.rebuild)
-
-	cg := api.Group("/consign")
+	cg := api.Group("/consign", authz.GuardResource(h.authz, "consign"))
 	cg.Get("/outstanding", h.consignOutstanding)
-	cg.Post("/rebuild", mw.RequireLevel("ADMIN"), h.rebuildConsign)
+	cg.Post("/rebuild", h.rebuildConsign)
 }
 
 func (h *Handler) onHand(c fiber.Ctx) error {

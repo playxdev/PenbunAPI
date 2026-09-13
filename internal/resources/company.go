@@ -34,8 +34,6 @@ var Company = &crud.Resource{
 		{Name: "email", Kind: schema.KindString, MaxLen: 100, Label: "อีเมล"},
 		{Name: "website", Kind: schema.KindString, MaxLen: 100, Label: "เว็บไซต์"},
 	},
-
-	RequireLevelWrite: adminWrite,
 }
 
 var Discount = &crud.Resource{
@@ -71,6 +69,4 @@ var Discount = &crud.Resource{
 		{Name: "end_date", Kind: schema.KindDate, Label: "วันที่สิ้นสุด"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 500, Label: "คำอธิบาย"},
 	},
-
-	RequireLevelWrite: adminWrite,
 }

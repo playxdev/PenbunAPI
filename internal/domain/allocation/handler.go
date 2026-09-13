@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/repository"
 	"penbun/api/internal/schema"
@@ -24,14 +25,15 @@ var Modes = []string{ModeLast, ModeAvg, ModeSold}
 type Handler struct {
 	db       *repository.DB
 	resolver *repository.Resolver
+	authz    *authz.Repo
 }
 
-func NewHandler(db *repository.DB, res *repository.Resolver) *Handler {
-	return &Handler{db: db, resolver: res}
+func NewHandler(db *repository.DB, res *repository.Resolver, az *authz.Repo) *Handler {
+	return &Handler{db: db, resolver: res, authz: az}
 }
 
 func (h *Handler) Register(api fiber.Router) {
-	g := api.Group("/allocation")
+	g := api.Group("/allocation", authz.GuardResource(h.authz, "allocation"))
 	g.Get("/history", h.history)
 	g.Post("/pull", h.pull)
 }

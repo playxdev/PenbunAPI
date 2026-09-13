@@ -33,7 +33,6 @@ func sample() *Resource {
 			{Name: "customer_name", Kind: schema.KindString, Required: true, MaxLen: 200},
 			{Name: "credit_limit", Kind: schema.KindDecimal},
 		},
-		RequireLevelWrite: []string{"ADMIN"},
 	}
 }
 
@@ -54,20 +53,10 @@ func TestValidate_RejectsBadDescriptor(t *testing.T) {
 		assert.NoError(t, sample().Validate())
 	})
 
-	// resource ที่เขียนได้แต่ลืมประกาศสิทธิ์ต้องทำให้ process ไม่ start
-	// ปล่อยผ่าน = ตารางข้อมูลหลักตัวใหม่เปิดให้ทุกคนที่ login แก้และลบได้เงียบ ๆ
-	t.Run("resource ที่เขียนได้ต้องประกาศ RequireLevelWrite", func(t *testing.T) {
-		r := sample()
-		r.RequireLevelWrite = nil
-		assert.ErrorContains(t, r.Validate(), "RequireLevelWrite")
-	})
-
-	t.Run("ReadOnly ไม่ต้องประกาศ RequireLevelWrite", func(t *testing.T) {
-		r := sample()
-		r.RequireLevelWrite = nil
-		r.ReadOnly = true
-		assert.NoError(t, r.Validate())
-	})
+	// สิทธิ์ไม่ได้อยู่ใน descriptor แล้ว Validate จึงไม่ตรวจเรื่องนั้นอีก
+	// สิ่งที่มาแทนคือ authz.GuardResource บนกลุ่ม ซึ่งครอบทุกเส้นทางโดยไม่ต้องประกาศ
+	// และ TestEveryMountedResourceHasPrivilegeRows ที่ตรวจว่าชื่อ resource
+	// มีแถวสิทธิ์อยู่จริงในฐาน
 }
 
 // ลำดับของหน้าต้องนิ่ง ไม่งั้นแถวเดิมจะโผล่สองหน้าและบางแถวจะหายไปเงียบ ๆ

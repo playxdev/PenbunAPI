@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"penbun/api/internal/platform/authz"
 	"penbun/api/internal/platform/httpx"
 	"penbun/api/internal/platform/mw"
 	"penbun/api/internal/repository"
@@ -20,10 +21,11 @@ import (
 type Engine struct {
 	DB       *repository.DB
 	Resolver *repository.Resolver
+	Authz    *authz.Repo
 }
 
-func NewEngine(db *repository.DB, res *repository.Resolver) *Engine {
-	return &Engine{DB: db, Resolver: res}
+func NewEngine(db *repository.DB, res *repository.Resolver, az *authz.Repo) *Engine {
+	return &Engine{DB: db, Resolver: res, Authz: az}
 }
 
 // Mount ติดตั้ง 5 endpoint มาตรฐานของ resource หนึ่งตัว
@@ -39,23 +41,22 @@ func (e *Engine) Mount(router fiber.Router, r *Resource) error {
 	}
 	g := router.Group("/" + r.Name)
 
-	// ตัวกรองสิทธิ์ต้องอยู่บนกลุ่ม ไม่ใช่บนแต่ละ endpoint
-	// เส้นทางที่เพิ่มทีหลังจะได้ไม่หลุดออกไปเพราะมีคนลืมใส่
-	if len(r.RequireLevel) > 0 {
-		g.Use(mw.RequireLevel(r.RequireLevel...))
-	}
+	// ตัวกรองสิทธิ์ตัวเดียว ใส่ทุกเส้นทาง ทั้งอ่านและเขียน
+	//
+	// เดิมต้องแยกเป็นสองชุด — RequireLevel บนกลุ่มสำหรับการอ่าน และ RequireLevelWrite
+	// บนแต่ละเส้นทางสำหรับการเขียน — เพราะ mw.RequireLevel รู้แค่ระดับของผู้ใช้
+	// ไม่รู้ว่าคำขอเป็นอ่านหรือเขียน authz.GuardResource อ่านการกระทำจาก HTTP method
+	// เอง ตัวกรองจึงเหลือตัวเดียวและใช้ได้กับทุก method
+	//
+	// ใส่ทีละเส้นทางแทนที่จะใส่บนกลุ่ม เพราะ middleware ของกลุ่มใน Fiber v3
+	// ไม่ปรากฏใน Route.Handlers เทสต์จึงมองไม่เห็นว่าเส้นทางไหนถูกกรองอยู่จริง
+	// ราคาของทางนี้คือ "ใส่ไม่ครบ" ซึ่ง TestEveryRouteCarriesThePrivilegeGuard เฝ้าอยู่
+	guard := authz.GuardResource(e.Authz, r.Name)
 
-	g.Get("", e.list(r))
-	g.Get("/:id", e.getByID(r))
+	g.Get("", guard, e.list(r))
+	g.Get("/:id", guard, e.getByID(r))
 
 	if !r.ReadOnly {
-		// ตัวกรองของการเขียนอยู่บนแต่ละเส้นทาง ไม่ใช่บนกลุ่ม เพราะกลุ่มใน Fiber
-		// ครอบทุก method การใส่ไว้บนกลุ่มจะกันการอ่านไปด้วย
-		//
-		// สิ่งที่กันการลืมจึงเป็น Resource.Validate ซึ่งบังคับให้ทุก resource
-		// ที่เขียนได้ประกาศ RequireLevelWrite และทำให้ process ไม่ start ถ้าไม่ประกาศ
-		// คู่กับ TestWriteRoutesCarryTheLevelGuard ที่ตรวจว่าเส้นทางเขียนทุกเส้นถือตัวกรองไว้จริง
-		guard := mw.RequireLevel(r.RequireLevelWrite...)
 		g.Post("", guard, e.create(r))
 		g.Put("/:id", guard, e.update(r))
 		g.Delete("/:id", guard, e.softDelete(r))

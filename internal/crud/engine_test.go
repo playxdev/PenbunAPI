@@ -40,7 +40,7 @@ var readOnly = &Resource{
 // ถ้าหลุดข้อนี้ POST /users จะเขียน user_password จาก body ตรงลงตาราง
 func TestReadOnlyMountsOnlyReads(t *testing.T) {
 	app := fiber.New()
-	require.NoError(t, NewEngine(nil, nil).Mount(app, readOnly))
+	require.NoError(t, NewEngine(nil, nil, nil).Mount(app, readOnly))
 
 	routes := routeSet(app)
 	assert.True(t, routes["GET /users"])
@@ -54,7 +54,6 @@ func writable() *Resource {
 	r := *readOnly
 	r.Name = "widget"
 	r.ReadOnly = false
-	r.RequireLevelWrite = []string{"ADMIN"}
 	return &r
 }
 
@@ -62,7 +61,7 @@ func TestWritableMountsFiveEndpoints(t *testing.T) {
 	r := writable()
 
 	app := fiber.New()
-	require.NoError(t, NewEngine(nil, nil).Mount(app, r))
+	require.NoError(t, NewEngine(nil, nil, nil).Mount(app, r))
 
 	routes := routeSet(app)
 	for _, want := range []string{
@@ -73,20 +72,31 @@ func TestWritableMountsFiveEndpoints(t *testing.T) {
 	}
 }
 
-// ตัวกรองสิทธิ์ต้องอยู่บนเส้นทางเขียนทุกเส้น และต้องไม่อยู่บนเส้นทางอ่าน
+// ตัวกรองสิทธิ์ต้องครอบทุกเส้นทางของ resource ทั้งอ่านและเขียน
 //
-// ตัวกรองถูกใส่ทีละเส้นทาง ไม่ใช่บนกลุ่ม เพราะกลุ่มครอบทุก method แล้วจะกัน
-// การอ่านไปด้วย ราคาของทางเลือกนั้นคือ "ใส่ไม่ครบ" ซึ่งเป็นสิ่งที่เทสต์นี้เฝ้าอยู่
-// ถ้าหลุด ผู้ใช้ระดับ USER จะแก้และลบข้อมูลหลักของทั้งระบบได้
-func TestWriteRoutesCarryTheLevelGuard(t *testing.T) {
+// ตัวกรองอยู่บนกลุ่มได้แล้วเพราะ authz.GuardResource อ่านการกระทำจาก HTTP method
+// เอง ไม่ต้องแยกอ่านกับเขียนเหมือน mw.RequireLevel ที่รู้แค่ระดับผู้ใช้
+// ราคาของกลุ่มคือถ้าลืมใส่ ทั้ง resource หลุดพร้อมกัน ไม่ใช่หลุดทีละเส้น
+// เทสต์นี้จึงนับ handler ของทุกเส้นทาง ไม่ใช่เฉพาะเส้นทางเขียน
+func TestEveryRouteCarriesThePrivilegeGuard(t *testing.T) {
 	app := fiber.New()
-	require.NoError(t, NewEngine(nil, nil).Mount(app, writable()))
+	require.NoError(t, NewEngine(nil, nil, nil).Mount(app, writable()))
 
 	n := handlerCount(app)
-	for _, w := range []string{"POST /widget", "PUT /widget/:id", "DELETE /widget/:id"} {
-		assert.Equal(t, 2, n[w], "%s ต้องถือตัวกรอง user_level ไว้", w)
+	for _, want := range []string{
+		"GET /widget", "GET /widget/:id",
+		"POST /widget", "PUT /widget/:id", "DELETE /widget/:id",
+	} {
+		assert.Equal(t, 2, n[want], "%s ต้องถือตัวกรองสิทธิ์ไว้", want)
 	}
-	for _, ro := range []string{"GET /widget", "GET /widget/:id"} {
-		assert.Equal(t, 1, n[ro], "%s เป็นการอ่าน ต้องไม่ติดตัวกรอง user_level", ro)
-	}
+}
+
+// ReadOnly ก็ต้องถูกกรอง — การอ่านของ users คือสิ่งที่ต้องกันเป็นอันดับแรก
+func TestReadOnlyRoutesAreGuardedToo(t *testing.T) {
+	app := fiber.New()
+	require.NoError(t, NewEngine(nil, nil, nil).Mount(app, readOnly))
+
+	n := handlerCount(app)
+	assert.Equal(t, 2, n["GET /users"])
+	assert.Equal(t, 2, n["GET /users/:id"])
 }
