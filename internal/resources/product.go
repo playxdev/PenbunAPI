@@ -53,6 +53,8 @@ var Product = &crud.Resource{
 		{Name: "pack_qty", Kind: schema.KindDecimal, Label: "จำนวนต่อแพ็ก"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 500, Label: "รายละเอียด"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 // ProductSKU คือ "ฉบับ" ในภาษาของโปรแกรมเดิม
@@ -93,6 +95,8 @@ var ProductSKU = &crud.Resource{
 		{Name: "return_deadline", Kind: schema.KindDate, Label: "กำหนดรับคืน"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 500, Label: "รายละเอียด"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 // Book เป็น read-only ใน engine กลาง
@@ -117,4 +121,9 @@ var Book = &crud.Resource{
 		{Param: "vendor_id", Column: "vendor_id", Kind: schema.KindString},
 	},
 	ReadOnly: true,
+
+	// ReadOnly ปิดเส้นทางเขียนของ engine กลาง แต่การเขียนมีอยู่จริงที่ domain/book
+	// และจำกัดไว้ที่ ADMIN เท่ากัน RequireLevelWrite จึงประกาศไว้ด้วย เพื่อให้
+	// /meta/permissions บอกหน้าจอได้ถูกว่าหน้าหนังสือแก้ไขได้ ไม่ใช่อ่านอย่างเดียว
+	RequireLevelWrite: adminWrite,
 }

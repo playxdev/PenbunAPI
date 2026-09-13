@@ -33,6 +33,7 @@ func sample() *Resource {
 			{Name: "customer_name", Kind: schema.KindString, Required: true, MaxLen: 200},
 			{Name: "credit_limit", Kind: schema.KindDecimal},
 		},
+		RequireLevelWrite: []string{"ADMIN"},
 	}
 }
 
@@ -51,6 +52,21 @@ func TestValidate_RejectsBadDescriptor(t *testing.T) {
 
 	t.Run("descriptor ที่ถูกต้องต้องผ่าน", func(t *testing.T) {
 		assert.NoError(t, sample().Validate())
+	})
+
+	// resource ที่เขียนได้แต่ลืมประกาศสิทธิ์ต้องทำให้ process ไม่ start
+	// ปล่อยผ่าน = ตารางข้อมูลหลักตัวใหม่เปิดให้ทุกคนที่ login แก้และลบได้เงียบ ๆ
+	t.Run("resource ที่เขียนได้ต้องประกาศ RequireLevelWrite", func(t *testing.T) {
+		r := sample()
+		r.RequireLevelWrite = nil
+		assert.ErrorContains(t, r.Validate(), "RequireLevelWrite")
+	})
+
+	t.Run("ReadOnly ไม่ต้องประกาศ RequireLevelWrite", func(t *testing.T) {
+		r := sample()
+		r.RequireLevelWrite = nil
+		r.ReadOnly = true
+		assert.NoError(t, r.Validate())
 	})
 }
 

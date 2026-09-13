@@ -49,9 +49,16 @@ func (e *Engine) Mount(router fiber.Router, r *Resource) error {
 	g.Get("/:id", e.getByID(r))
 
 	if !r.ReadOnly {
-		g.Post("", e.create(r))
-		g.Put("/:id", e.update(r))
-		g.Delete("/:id", e.softDelete(r))
+		// ตัวกรองของการเขียนอยู่บนแต่ละเส้นทาง ไม่ใช่บนกลุ่ม เพราะกลุ่มใน Fiber
+		// ครอบทุก method การใส่ไว้บนกลุ่มจะกันการอ่านไปด้วย
+		//
+		// สิ่งที่กันการลืมจึงเป็น Resource.Validate ซึ่งบังคับให้ทุก resource
+		// ที่เขียนได้ประกาศ RequireLevelWrite และทำให้ process ไม่ start ถ้าไม่ประกาศ
+		// คู่กับ TestWriteRoutesCarryTheLevelGuard ที่ตรวจว่าเส้นทางเขียนทุกเส้นถือตัวกรองไว้จริง
+		guard := mw.RequireLevel(r.RequireLevelWrite...)
+		g.Post("", guard, e.create(r))
+		g.Put("/:id", guard, e.update(r))
+		g.Delete("/:id", guard, e.softDelete(r))
 	}
 	return nil
 }

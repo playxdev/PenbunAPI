@@ -9,6 +9,12 @@ import "penbun/api/internal/crud"
 // เพื่อให้อ่านคู่กับเอกสารโครงสร้างฐานข้อมูลได้ตรงกัน
 //
 // เพิ่ม resource ใหม่ = เขียน descriptor แล้วต่อท้ายรายการนี้
+//
+// นโยบายสิทธิ์ของชั้นนี้: ทุกคนที่ login อ่านข้อมูลหลักได้ เพราะหน้าจอเอกสาร
+// ต้องเลือกลูกค้า สินค้า และคลังจากตารางพวกนี้ แต่การแก้ไขข้อมูลหลักเป็นงาน
+// ของ ADMIN — descriptor ที่เขียนได้จึงตั้ง RequireLevelWrite ไว้ทุกตัว
+var adminWrite = []string{"ADMIN"}
+
 func All() []*crud.Resource {
 	return []*crud.Resource{
 		// ชั้นระบบ — อ่านอย่างเดียว และเฉพาะ ADMIN

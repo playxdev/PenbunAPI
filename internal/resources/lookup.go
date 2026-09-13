@@ -31,6 +31,8 @@ var CustomerType = &crud.Resource{
 		{Name: "description", Kind: schema.KindString, MaxLen: 1000, Label: "คำอธิบาย"},
 		{Name: "base_credit_day", Kind: schema.KindInt, Label: "เครดิตพื้นฐาน (วัน)"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var VendorType = &crud.Resource{
@@ -47,6 +49,8 @@ var VendorType = &crud.Resource{
 		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 150, Label: "ชื่อประเภท"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var UnitType = &crud.Resource{
@@ -63,6 +67,8 @@ var UnitType = &crud.Resource{
 		{Name: "unit_type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อหน่วยนับ"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var BookType = &crud.Resource{
@@ -79,6 +85,8 @@ var BookType = &crud.Resource{
 		{Name: "type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภท"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var ProductCategory = &crud.Resource{
@@ -96,6 +104,8 @@ var ProductCategory = &crud.Resource{
 		{Name: "category_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อหมวด"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var ProductFormatType = &crud.Resource{
@@ -112,6 +122,8 @@ var ProductFormatType = &crud.Resource{
 		{Name: "format_name", Kind: schema.KindString, Required: true, MaxLen: 150, Label: "ชื่อรูปแบบ"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var DiscountType = &crud.Resource{
@@ -128,4 +140,6 @@ var DiscountType = &crud.Resource{
 		{Name: "discount_type_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อประเภทส่วนลด"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 250, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }

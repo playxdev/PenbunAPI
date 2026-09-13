@@ -307,8 +307,47 @@ ReadOnly:     true,
 RequireLevel: []string{"ADMIN"},
 ```
 
+`RequireLevelWrite` จำกัดเฉพาะ `POST` / `PUT` / `DELETE` แยกจากการอ่าน เพราะข้อมูลหลัก
+ต้องให้ทุกคนที่ login อ่านได้ — หน้าจอเอกสารเลือกลูกค้า สินค้า และคลังจากตารางพวกนี้ —
+แต่การแก้ข้อมูลหลักเป็นงานของ ADMIN descriptor ทุกตัวใน `resources` ที่เขียนได้จึงตั้ง
+
+```go
+RequireLevelWrite: adminWrite, // []string{"ADMIN"}
+```
+
+`Resource.Validate` บังคับว่า resource ที่ไม่ใช่ `ReadOnly` ต้องประกาศ `RequireLevelWrite`
+เสมอ ลืมแล้ว process ไม่ start — ดีกว่าปล่อยตารางใหม่เปิดให้ทุกคนที่ login แก้และลบเงียบ ๆ
+
+ต่างจาก `RequireLevel` ตรงที่ตัวกรองของการเขียนอยู่บนแต่ละเส้นทาง ไม่ใช่บนกลุ่ม
+เพราะกลุ่มใน Fiber ครอบทุก method การใส่ไว้บนกลุ่มจะกันการอ่านไปด้วย สิ่งที่กันการลืม
+จึงเป็น `Validate` ข้างบน คู่กับ `TestWriteRoutesCarryTheLevelGuard` ที่ตรวจว่าเส้นทาง
+เขียนทุกเส้นถือตัวกรองไว้จริง
+
 `resources` ยังห้าม import `fiber` เหมือนเดิม descriptor จึงถือแค่ชื่อระดับสิทธิ์
 เป็นข้อความ ส่วน `crud.Engine.Mount` เป็นฝ่ายแปลงเป็น `mw.RequireLevel` ตอนติดตั้ง
+
+`domain/book` ถือการเขียนหนังสือไว้เอง (ต้องเขียนสองตารางในทรานแซกชันเดียว) จึงใส่
+`mw.RequireLevel("ADMIN")` ไว้ที่กลุ่มของตัวเองให้ตรงกับ descriptor ตัวอื่นในชั้นเดียวกัน
+descriptor ของ `book` ตั้ง `ReadOnly` คู่กับ `RequireLevelWrite` ซึ่งแปลว่า "เขียนได้จริง
+แต่เขียนที่ domain package" — `/meta/permissions` อ่านคู่นี้เป็นคำตอบว่าหน้าจอไหนแก้ไขได้
+
+เส้นทางเอกสาร (`domain/document`) และ `/allocation/pull` ยังเปิดให้ทุกคนที่ login เขียนได้
+โดยตั้งใจ นั่นคืองานประจำวันของผู้ใช้ทั่วไป
+
+### `GET /meta/permissions`
+
+บอกหน้าจอว่าผู้ใช้ที่ถือ token นี้อ่านและเขียน resource ไหนได้บ้าง คำนวณจาก descriptor
+ชุดเดียวกับที่ `crud.Engine` ติดตั้งเส้นทางให้ ไม่ใช่รายการที่เขียนซ้ำ
+
+```json
+{ "level": "USER",
+  "resources": { "customer": { "read": true, "write": false },
+                 "users":    { "read": false, "write": false } } }
+```
+
+เหตุผลเดียวกับ `/meta/enums` — สำเนาที่สองของกฎจะค่อย ๆ ต่างจากของจริง แล้วหน้าจอจะโชว์
+ปุ่มที่กดแล้วได้ 403 หรือซ่อนปุ่มที่กดได้ endpoint นี้ **ไม่ใช่การตรวจสิทธิ์** ตัวที่ตรวจจริง
+คือ `mw.RequireLevel` บนเส้นทางแต่ละเส้น ที่นี่แค่ทำให้หน้าจอพูดตรงกับเส้นทางเหล่านั้น
 
 `users` เป็น resource เดียวที่ใช้ทั้งสองอย่างพร้อมกัน `ReadOnly` ปิดเส้นทางเขียนของ
 engine กลางไว้เพราะ `user_password` ต้องผ่าน bcrypt และ `user_level` เป็นคอลัมน์ที่
@@ -340,8 +379,8 @@ engine กลางไว้เพราะ `user_password` ต้องผ่�
 | สต็อก | `onhand` `movements` `adjust` `transfer` `rebuild` | 5 |
 | ฝากขาย | `outstanding` `rebuild` | 2 |
 | การจัดสรร | `history` `pull` | 2 |
-| ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` | 4 |
-| | **รวม** | **161** |
+| ระบบ | `/healthz` `/readyz` `/version` `/meta/enums` `/meta/permissions` | 5 |
+| | **รวม** | **162** |
 
 ---
 

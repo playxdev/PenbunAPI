@@ -101,7 +101,7 @@ func run() error {
 	user.NewHandler(db, resolver, crudEngine, cfg).Register(api)
 	stock.NewHandler(stock.NewRepo(db), db, resolver, cfg).Register(api)
 	allocation.NewHandler(db, resolver).Register(api)
-	meta.NewHandler(db).Register(api)
+	meta.NewHandler(db, resources.All()).Register(api)
 
 	return serve(app, cfg, lg)
 }

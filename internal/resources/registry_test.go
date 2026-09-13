@@ -89,3 +89,34 @@ func TestUserResourceIsAdminOnlyAndReadOnly(t *testing.T) {
 	assert.Equal(t, "dbo.vw_users", User.Source,
 		"ต้องอ่านผ่าน View ที่ไม่คืน user_password")
 }
+
+// ข้อมูลหลักทุกตัวที่เขียนได้ต้องจำกัดการเขียนไว้ที่ ADMIN
+//
+// การอ่านเปิดให้ทุกคนที่ login โดยตั้งใจ — หน้าจอเอกสารเลือกลูกค้า สินค้า และคลัง
+// จากตารางพวกนี้ แต่ถ้าการเขียนหลุดไปด้วย ผู้ใช้ระดับ USER จะลบผู้ขาย ลูกค้า
+// หรือกฎราคาของทั้งระบบได้ ทั้งที่หน้าจอไม่มีปุ่มให้กด
+func TestWritableResourcesAreAdminOnlyForWrites(t *testing.T) {
+	for _, r := range All() {
+		if r.ReadOnly {
+			continue
+		}
+		t.Run(r.Name, func(t *testing.T) {
+			assert.Equal(t, []string{"ADMIN"}, r.RequireLevelWrite,
+				"%s เขียนได้ การเขียนต้องจำกัดไว้ที่ ADMIN", r.Name)
+		})
+	}
+}
+
+// หนังสือเขียนได้จริง แค่เขียนที่ domain/book ไม่ใช่ที่ engine กลาง
+// descriptor ต้องบอกความจริงข้อนี้ ไม่งั้น /meta/permissions จะบอกหน้าจอว่า
+// หน้าหนังสืออ่านอย่างเดียว แล้วปุ่มเพิ่มหนังสือจะหายไปทั้งที่ ADMIN กดได้
+func TestBookDeclaresItsWriteLevelEvenThoughItIsReadOnlyHere(t *testing.T) {
+	assert.Equal(t, []string{"ADMIN"}, Book.RequireLevelWrite)
+}
+
+// ผู้ใช้งานเขียนผ่าน engine กลางไม่ได้เลย ไม่ว่าระดับไหน
+// การสร้างและแก้ผู้ใช้อยู่ที่ domain/user ซึ่งมีด่านของตัวเอง
+func TestUserResourceDeclaresNoWriteLevel(t *testing.T) {
+	assert.Empty(t, User.RequireLevelWrite,
+		"users ต้องไม่ประกาศสิทธิ์เขียน ไม่งั้นหน้าจอจะขึ้นปุ่มแก้ที่ไม่มีเส้นทางรองรับ")
+}

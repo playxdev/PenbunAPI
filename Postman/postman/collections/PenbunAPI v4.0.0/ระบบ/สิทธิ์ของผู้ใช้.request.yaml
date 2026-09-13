@@ -1,0 +1,5 @@
+$kind: http-request
+description: สิทธิ์อ่าน/เขียนของผู้ใช้ที่ถือ token นี้ คำนวณจาก descriptor ชุดเดียวกับที่ติดตั้งเส้นทางจริง ไม่ใช่รายการที่เขียนซ้ำ. หน้าจอใช้ซ่อนปุ่มที่กดแล้วได้ 403 — ตัวที่ตรวจสิทธิ์จริงคือ mw.RequireLevel บนแต่ละเส้นทาง
+url: "{{api}}/meta/permissions"
+method: GET
+order: 1010

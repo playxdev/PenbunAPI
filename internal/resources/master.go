@@ -42,6 +42,8 @@ var Warehouse = &crud.Resource{
 		{Name: "zip_code", Kind: schema.KindString, MaxLen: 20, Label: "รหัสไปรษณีย์"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var ProductGroup = &crud.Resource{
@@ -65,6 +67,8 @@ var ProductGroup = &crud.Resource{
 		{Name: "product_group_name", Kind: schema.KindString, Required: true, MaxLen: 100, Label: "ชื่อกลุ่มสินค้า"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var Customer = &crud.Resource{
@@ -114,6 +118,8 @@ var Customer = &crud.Resource{
 		{Name: "invoice_format", Kind: schema.KindString, MaxLen: 20, Label: "รูปแบบใบกำกับ"},
 		{Name: "note", Kind: schema.KindString, MaxLen: 500, Label: "หมายเหตุ"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var Vendor = &crud.Resource{
@@ -166,6 +172,8 @@ var Vendor = &crud.Resource{
 		{Name: "bank_account_name", Kind: schema.KindString, MaxLen: 150, Label: "ชื่อบัญชี"},
 		{Name: "note", Kind: schema.KindString, MaxLen: 500, Label: "หมายเหตุ"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var Route = &crud.Resource{
@@ -196,6 +204,8 @@ var Route = &crud.Resource{
 		{Name: "sort_order", Kind: schema.KindInt, Label: "ลำดับ"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }
 
 var CustomerRoute = &crud.Resource{
@@ -227,4 +237,6 @@ var CustomerRoute = &crud.Resource{
 		{Name: "delivery_seq", Kind: schema.KindInt, Label: "ลำดับจุดจอด"},
 		{Name: "description", Kind: schema.KindString, MaxLen: 255, Label: "คำอธิบาย"},
 	},
+
+	RequireLevelWrite: adminWrite,
 }

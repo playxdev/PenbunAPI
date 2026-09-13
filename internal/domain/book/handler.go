@@ -33,8 +33,11 @@ func NewHandler(db *repository.DB, res *repository.Resolver, ce *crud.Engine) *H
 	return &Handler{db: db, resolver: res, crud: ce}
 }
 
+// หนังสือเป็นข้อมูลหลัก ไม่ใช่งานประจำวัน การเขียนจึงจำกัดไว้ที่ ADMIN
+// เท่ากับ descriptor ตัวอื่นในชั้นเดียวกันที่ตั้ง RequireLevelWrite ไว้
+// ตัวกรองอยู่บนกลุ่ม เส้นทางที่เพิ่มทีหลังจะได้ไม่หลุด
 func (h *Handler) Register(api fiber.Router) {
-	g := api.Group("/book")
+	g := api.Group("/book", mw.RequireLevel("ADMIN"))
 	g.Post("", h.create)
 	g.Put("/:id", h.update)
 	g.Delete("/:id", h.softDelete)
