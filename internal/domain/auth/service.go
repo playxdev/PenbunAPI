@@ -144,7 +144,7 @@ func (s *Service) Me(ctx context.Context, userID string) (*UserInfo, error) {
 	// ปล่อยให้ error ขึ้นไปตามปกติ ไม่กลืนแล้วคืนรายการว่าง
 	// ฐานที่ยังเป็น v11 จะไม่มี vw_user_privilege และต้องรู้ตัวตั้งแต่คำขอแรก
 	// ไม่ใช่ค่อยมางงว่าทำไมทุกคนไม่มีสิทธิ์อะไรเลย
-	privs, err := s.repo.PrivilegesFor(ctx, user.UserID, user.UserLevel)
+	privs, err := s.repo.PrivilegesFor(ctx, user.UserID)
 	if err != nil {
 		return nil, err
 	}

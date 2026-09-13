@@ -67,6 +67,18 @@ func TestLevelIsUppercasedAndChecked(t *testing.T) {
 	assert.Equal(t, "user_level", fieldOf(t, err))
 }
 
+// บทบาทที่ผูกให้ต้องเป็นค่าเดียวกับที่เขียนลงคอลัมน์ user_level ไม่ใช่ค่าดิบจาก request
+// ถ้าสองค่านี้หลุดจากกัน ผู้ใช้จะได้สิทธิ์ของบทบาทหนึ่งแต่ถูก mw.RequireLevel
+// ตัดสินด้วยอีกบทบาทหนึ่ง
+func TestRoleFollowsTheLevelThatWasWritten(t *testing.T) {
+	req := ok()
+	req.UserLevel = "  user  "
+	vals, err := handler().validate(req)
+	require.NoError(t, err)
+	assert.Equal(t, "USER", vals["user_level"])
+	assert.Equal(t, vals["user_level"], level(vals))
+}
+
 func TestRefusals(t *testing.T) {
 	long := ""
 	for range 101 {

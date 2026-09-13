@@ -144,6 +144,14 @@ func (h *Handler) create(c fiber.Ctx) error {
 		if err := tx.QueryRowContext(ctx, q, a.Values()...).Scan(&autoID); err != nil {
 			return err
 		}
+
+		// ผูกบทบาทในทรานแซกชันเดียวกับการสร้างผู้ใช้
+		// ถ้าแยกออกไปทำทีหลัง ผู้ใช้ที่สร้างสำเร็จแต่ผูกบทบาทไม่สำเร็จจะเหลือค้าง
+		// อยู่ในฐานแบบไม่มีสิทธิ์อะไรเลย ซึ่งมองจากหน้าจอไม่ออกว่าต่างจากบัญชีปกติ
+		if err := assignRole(ctx, tx, autoID, level(vals), actor); err != nil {
+			return err
+		}
+
 		return tx.QueryRowContext(ctx,
 			"SELECT user_id FROM dbo.tb_users WHERE autoID = @p1", autoID).Scan(&userID)
 	})
@@ -163,6 +171,42 @@ func (h *Handler) create(c fiber.Ctx) error {
 		return err
 	}
 	return httpx.Created(c, "เพิ่มผู้ใช้เรียบร้อย", row)
+}
+
+// level อ่านระดับสิทธิ์ที่ validate ทำให้เป็นตัวพิมพ์ใหญ่แล้วออกมาจากชุดคอลัมน์
+// อ่านจาก vals ไม่ใช่จาก request ซ้ำ เพื่อไม่ให้มีสองที่ที่ตัดสินว่าค่าไหนถูกเขียนลงฐาน
+func level(vals map[string]any) string {
+	s, _ := vals["user_level"].(string)
+	return s
+}
+
+// assignRole ผูกผู้ใช้เข้ากับบทบาทที่ role_code ตรงกับ user_level ของตัวเอง
+//
+// PenbunSQL v12 seed บทบาท ADMIN และ USER ไว้ให้ตรงกับสองระดับที่ tb_users ใช้อยู่
+// การผูกจึงเป็นการหาแถวที่ชื่อตรงกัน ไม่ใช่การแปลงค่า
+//
+// ไม่เจอบทบาท = ล้มทั้งทรานแซกชัน ไม่ใช่สร้างผู้ใช้แล้วปล่อยให้ไม่มีสิทธิ์
+// ถ้าถึงจุดนี้แปลว่าฐานยังไม่ได้ติดตั้ง v12 หรือมีคนลบแถวบทบาทออกไป
+// ทั้งสองกรณีต้องรู้ตอนนี้ ไม่ใช่ตอนผู้ใช้คนนั้น login แล้วเปิดอะไรไม่ได้เลย
+func assignRole(ctx context.Context, tx *sql.Tx, userAuto int, roleCode, actor string) error {
+	const q = `
+INSERT INTO dbo.tb_user_role (prefix, ref_user_auto, ref_role_auto, update_by)
+SELECT N'URO', @p1, r.autoID, @p3
+  FROM dbo.tb_role r
+ WHERE r.role_code = @p2 AND r.is_delete = 0 AND r.is_active = 1`
+
+	res, err := tx.ExecContext(ctx, q, userAuto, roleCode, actor)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return httpx.Internal("ไม่พบบทบาท '" + roleCode + "' ใน tb_role — ฐานข้อมูลยังไม่ใช่ PenbunSQL v12")
+	}
+	return nil
 }
 
 // validate คืนคอลัมน์ที่พร้อมเขียนลง tb_users

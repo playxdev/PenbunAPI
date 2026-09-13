@@ -148,34 +148,19 @@ type Privilege struct {
 
 // PrivilegesFor คืนสิทธิ์ผลลัพธ์ของผู้ใช้หนึ่งคน
 //
-// ทางหลักคือ vw_user_privilege ซึ่งรวมสิทธิ์ข้ามบทบาทแบบ union ให้แล้ว
-// (ผู้ใช้ถือได้หลายบทบาท บทบาทใดให้ผ่านก็ผ่าน)
+// vw_user_privilege รวมสิทธิ์ข้ามบทบาทแบบ union ให้แล้ว ผู้ใช้ถือได้หลายบทบาท
+// บทบาทใดให้ผ่านก็ผ่าน
 //
-// ทางรองมีไว้เพราะ v12 เพิ่งวางตาราง RBAC ลงฐาน แต่ยังไม่มีอะไรผูกบทบาทให้
-// ผู้ใช้ที่สร้างผ่าน POST /users — มีแต่ผู้ใช้ตั้งต้นที่ SEED ผูกไว้ให้ ผู้ใช้ที่
-// ยังไม่มีแถวใน tb_user_role จึงตกมาที่บทบาทที่ role_code ตรงกับ user_level ของตัวเอง
-// ซึ่ง SEED ตั้งไว้ให้เท่ากับกฎที่ API บังคับอยู่จริงพอดี
-//
-// ทางรองไม่ได้เขียนกฎซ้ำไว้ใน Go — มันอ่าน tb_privilege เหมือนกัน ต่างแค่ทางที่
-// เดินไปถึงบทบาท ฐานข้อมูลจึงยังเป็นแหล่งความจริงแหล่งเดียว
-// ตัดทางรองนี้ทิ้งได้เมื่อ POST /users เขียน tb_user_role ให้ทุกคนแล้ว
-func (r *Repo) PrivilegesFor(ctx context.Context, userID, userLevel string) ([]Privilege, error) {
+// ผู้ใช้ทุกคนมีแถวใน tb_user_role เสมอ — SEED ผูกให้ผู้ใช้ตั้งต้น และ POST /users
+// ผูกให้ในทรานแซกชันเดียวกับที่สร้างบัญชี รายการว่างจึงแปลว่า "ไม่มีสิทธิ์จริง ๆ"
+// ไม่ใช่ "ยังไม่ได้ผูกบทบาท" และไม่ต้องมีทางรองมาเดาแทน
+func (r *Repo) PrivilegesFor(ctx context.Context, userID string) ([]Privilege, error) {
 	const q = `
 SELECT resource_code, can_view, can_insert, can_update, can_delete
   FROM dbo.vw_user_privilege
- WHERE user_id = @p1
-UNION ALL
-SELECT p.resource_code,
-       CAST(p.can_view AS INT), CAST(p.can_insert AS INT),
-       CAST(p.can_update AS INT), CAST(p.can_delete AS INT)
-  FROM dbo.tb_privilege p
-  INNER JOIN dbo.tb_role r ON r.autoID = p.ref_role_auto
- WHERE r.role_code = @p2
-   AND r.is_delete = 0 AND r.is_active = 1
-   AND p.is_delete = 0 AND p.is_active = 1
-   AND NOT EXISTS (SELECT 1 FROM dbo.vw_user_privilege WHERE user_id = @p1)`
+ WHERE user_id = @p1`
 
-	rows, err := r.db.Exec().QueryContext(ctx, q, userID, userLevel)
+	rows, err := r.db.Exec().QueryContext(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}
