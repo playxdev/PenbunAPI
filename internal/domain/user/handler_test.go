@@ -55,16 +55,23 @@ func TestStatusChangePwIsLeftToTheTable(t *testing.T) {
 	assert.NotContains(t, vals, "user_id")
 }
 
-func TestLevelIsUppercasedAndChecked(t *testing.T) {
+// ระดับถูกทำเป็นตัวพิมพ์ใหญ่และตัดช่องว่างก่อนเขียนลงคอลัมน์
+//
+// รายการค่าที่รับได้ไม่ได้อยู่ใน Go แล้ว — tb_role เป็นคนบอก และ assignRole เป็นคน
+// ปฏิเสธค่าที่ไม่ตรงกับบทบาทไหนเลย (400 พร้อมฟิลด์ user_level) ซึ่งต้องมีฐานจึงทดสอบ
+// ที่ test/integration แทน ที่นี่เหลือแค่การแปลงค่า ซึ่งต้องตรงกับที่ส่งไปหาบทบาท
+func TestLevelIsUppercasedAndTrimmed(t *testing.T) {
 	req := ok()
-	req.UserLevel = "admin"
+	req.UserLevel = "  admin  "
 	vals, err := handler().validate(req)
 	require.NoError(t, err)
 	assert.Equal(t, "ADMIN", vals["user_level"])
 
-	req.UserLevel = "MANAGER"
-	_, err = handler().validate(req)
-	assert.Equal(t, "user_level", fieldOf(t, err))
+	// ระดับที่ยังไม่มีบทบาทรองรับผ่าน validate ได้ เพราะการตัดสินอยู่ที่ฐาน
+	req.UserLevel = "WAREHOUSE"
+	vals, err = handler().validate(req)
+	require.NoError(t, err)
+	assert.Equal(t, "WAREHOUSE", vals["user_level"])
 }
 
 // บทบาทที่ผูกให้ต้องเป็นค่าเดียวกับที่เขียนลงคอลัมน์ user_level ไม่ใช่ค่าดิบจาก request

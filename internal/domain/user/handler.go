@@ -47,10 +47,6 @@ func (h *Handler) Register(api fiber.Router) {
 	api.Post("/users", authz.Guard(h.authz, "users", authz.Insert), h.create)
 }
 
-// levels คือค่าที่ tb_users.user_level รับได้จริงในรุ่นนี้
-// รอ tb_role ของ PenbunSQL แล้วรายการนี้จะย้ายไปอยู่ในฐานข้อมูล
-var levels = map[string]bool{"ADMIN": true, "USER": true}
-
 // ชื่อผู้ใช้ไปอยู่ในคอลัมน์ update_by ของทุกตารางในระบบ จึงจำกัดให้เป็นอักษรละติน
 // ตัวเลข จุด ขีดกลางและขีดล่าง เพื่อไม่ให้บันทึกการแก้ไขอ่านยากหรือคัดลอกผิด
 var userNamePattern = regexp.MustCompile(`^[a-zA-Z0-9._-]{3,50}$`)
@@ -184,31 +180,34 @@ func level(vals map[string]any) string {
 
 // assignRole ผูกผู้ใช้เข้ากับบทบาทที่ role_code ตรงกับ user_level ของตัวเอง
 //
-// PenbunSQL v12 seed บทบาท ADMIN และ USER ไว้ให้ตรงกับสองระดับที่ tb_users ใช้อยู่
-// การผูกจึงเป็นการหาแถวที่ชื่อตรงกัน ไม่ใช่การแปลงค่า
+// tb_role คือรายการบทบาทที่มีจริง การผูกจึงเป็นการหาแถวที่ชื่อตรงกัน ไม่ใช่การแปลงค่า
+// และเป็นจุดเดียวที่ตัดสินว่า user_level ที่ส่งมาใช้ได้ไหม — ไม่มีสำเนาของรายการนี้ใน Go
 //
-// ไม่เจอบทบาท = ล้มทั้งทรานแซกชัน ไม่ใช่สร้างผู้ใช้แล้วปล่อยให้ไม่มีสิทธิ์
-// ถ้าถึงจุดนี้แปลว่าฐานยังไม่ได้ติดตั้ง v12 หรือมีคนลบแถวบทบาทออกไป
-// ทั้งสองกรณีต้องรู้ตอนนี้ ไม่ใช่ตอนผู้ใช้คนนั้น login แล้วเปิดอะไรไม่ได้เลย
+// ไม่เจอบทบาท = ล้มทั้งทรานแซกชัน ไม่ใช่สร้างผู้ใช้แล้วปล่อยให้ไม่มีสิทธิ์ บัญชีแบบนั้น
+// มองจากหน้าจอไม่ออกว่าต่างจากบัญชีปกติ กว่าจะรู้คือตอนเจ้าตัว login แล้วเปิดอะไรไม่ได้
+//
+// คืน 400 พร้อมชื่อฟิลด์ ไม่ใช่ 500 เพราะเมื่อฐานเป็น v12 ขึ้นไป "ไม่มีบทบาทนี้"
+// แปลว่าค่าที่ส่งมาผิด ไม่ใช่ระบบพัง ส่วนฐานที่ยังไม่มีตารางเลยจะ error ตั้งแต่ query
 func assignRole(ctx context.Context, tx *sql.Tx, userAuto int, roleCode, actor string) error {
-	const q = `
-INSERT INTO dbo.tb_user_role (prefix, ref_user_auto, ref_role_auto, update_by)
-SELECT N'URO', @p1, r.autoID, @p3
-  FROM dbo.tb_role r
- WHERE r.role_code = @p2 AND r.is_delete = 0 AND r.is_active = 1`
+	const findRole = `
+SELECT TOP 1 autoID FROM dbo.tb_role
+ WHERE role_code = @p1 AND is_delete = 0 AND is_active = 1`
 
-	res, err := tx.ExecContext(ctx, q, userAuto, roleCode, actor)
-	if err != nil {
+	var roleAuto int
+	switch err := tx.QueryRowContext(ctx, findRole, roleCode).Scan(&roleAuto); {
+	case errors.Is(err, sql.ErrNoRows):
+		return httpx.Validation("ไม่มีบทบาท '"+roleCode+"' ในระบบ").
+			WithField("user_level", httpx.CodeValidationFailed, "")
+	case err != nil:
 		return err
 	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return httpx.Internal("ไม่พบบทบาท '" + roleCode + "' ใน tb_role — ฐานข้อมูลยังไม่ใช่ PenbunSQL v12")
-	}
-	return nil
+
+	const link = `
+INSERT INTO dbo.tb_user_role (prefix, ref_user_auto, ref_role_auto, update_by)
+VALUES (N'URO', @p1, @p2, @p3)`
+
+	_, err := tx.ExecContext(ctx, link, userAuto, roleAuto, actor)
+	return err
 }
 
 // validate คืนคอลัมน์ที่พร้อมเขียนลง tb_users
@@ -232,10 +231,9 @@ func (h *Handler) validate(req *createRequest) (map[string]any, error) {
 		return nil, httpx.BadRequest(httpx.CodeFieldRequired, "ต้องระบุสิทธิ์การใช้งาน").
 			WithField("user_level", httpx.CodeFieldRequired, "")
 	}
-	if !levels[level] {
-		return nil, httpx.Validation("สิทธิ์การใช้งานต้องเป็น ADMIN หรือ USER").
-			WithField("user_level", httpx.CodeValidationFailed, "")
-	}
+	// ค่าที่รับได้ไม่ได้เขียนตายไว้ที่นี่แล้ว — tb_role คือรายการบทบาทที่มีจริง
+	// และ assignRole เป็นคนปฏิเสธค่าที่ไม่ตรงกับบทบาทไหนเลย เพิ่มบทบาทในฐาน
+	// แล้ว API รับค่านั้นทันทีโดยไม่ต้อง deploy ใหม่
 
 	if req.Password == "" {
 		return nil, httpx.BadRequest(httpx.CodeFieldRequired, "ต้องระบุรหัสผ่านเริ่มต้น").
